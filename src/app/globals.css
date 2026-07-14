@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/*
+ * TODO: BRAND_COLORS — cyan sampled from the v2 app UI (#4FCDC2 buttons/
+ * tiles, splash gradient #6CDED6 → #44B9B1); adjust if it drifts from the
+ * app's exact palette.
+ *   --color-brand  : primary cyan (app buttons / splash)
+ *   --color-accent : coral used for exams & alerts
+ *   --color-ink    : dark navy used for headings in the app
+ */
+@theme {
+  --color-brand: #4fcdc2;
+  --color-brand-dark: #2b9c92;
+  --color-brand-soft: #e6f9f7;
+  --color-accent: #f97066;
+  --color-ink: #2d3958;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-ink antialiased;
+}

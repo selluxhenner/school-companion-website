@@ -1,70 +1,75 @@
-# Getting Started with Create React App
+# School Companion — Marketing Website
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+One-page static marketing site for the School Companion app (iOS + Android), built with
+Next.js (App Router, static export), TypeScript, and Tailwind CSS.
 
-## Available Scripts
+## Run it
 
-In the project directory, you can run:
+```bash
+npm install
+npm run dev        # http://localhost:3000
+npm run build      # static site written to /out — deploy that folder anywhere
+npm run preview    # serve /out locally to check the production build
+```
 
-### `npm start`
+## Fill in the placeholders
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Everything you must edit is marked `TODO`. Find them all with a project-wide search
+for `TODO`. The important ones:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+| What | Where |
+| --- | --- |
+| `SITE_URL` (production domain) | [src/lib/site.ts](src/lib/site.ts) |
+| `APP_ONE_LINER`, `APP_DESCRIPTION` | [src/lib/site.ts](src/lib/site.ts) |
+| `APP_STORE_URL`, `PLAY_STORE_URL` | [src/lib/site.ts](src/lib/site.ts) |
+| `CONTACT_EMAIL` | [src/lib/site.ts](src/lib/site.ts) |
+| `FEATURES[]` (titles + one-liners) | [src/lib/site.ts](src/lib/site.ts) |
+| `BRAND_COLORS` | [src/app/globals.css](src/app/globals.css) (`@theme` block) |
+| Logo (swap inline SVG for `/logo.svg`) | [src/components/Logo.tsx](src/components/Logo.tsx) |
+| Privacy policy wording + date | [src/app/privacy/page.tsx](src/app/privacy/page.tsx) |
+| Terms wording | [src/app/terms/page.tsx](src/app/terms/page.tsx) |
+| `aggregateRating` (once you have reviews) | [src/app/page.tsx](src/app/page.tsx) |
 
-### `npm test`
+`SITE_URL` feeds the canonical URLs, Open Graph tags, `sitemap.xml`, and `robots.txt` —
+set it before deploying.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Screenshots
 
-### `npm run build`
+Screenshots live in `public/screenshots/` as raw device captures (no frame — the site
+adds a CSS phone frame). To change them:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Drop the image in `public/screenshots/` (portrait, ~738×1600 works best; keep files
+   under ~150 KB since the static export serves them as-is).
+2. Register it in `SCREENSHOTS` in [src/lib/site.ts](src/lib/site.ts) with a descriptive
+   `alt` text and a one-line caption.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+The hero uses `public/screenshots/overview.jpeg` directly
+([src/components/Hero.tsx](src/components/Hero.tsx)). A spare splash-screen shot lives at
+`public/screenshots/splash.jpeg` if you'd rather use that.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Store badges
 
-### `npm run eject`
+Official assets in `public/badges/`:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- `app-store-badge.svg` — Apple "Download on the App Store" (from Apple's marketing tools)
+- `google-play-badge.png` — Google "Get it on Google Play" (official generic web badge;
+  it ships with built-in clear space, which is why it renders slightly larger in
+  [src/components/StoreBadges.tsx](src/components/StoreBadges.tsx))
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Don't recolor, crop, or reshape them.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Social share image
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+`public/og.png` (1200×630) is referenced by the Open Graph/Twitter tags. Regenerate or
+replace it if the branding changes.
 
-## Learn More
+## Deploy
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+`npm run build` produces a fully static site in `/out` — every page is pre-rendered HTML.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- **Vercel**: import the repo; it detects Next.js and the static export automatically.
+- **Netlify**: build command `npm run build`, publish directory `out`.
+- **Anything else** (GitHub Pages, Cloudflare Pages, plain nginx): upload the `/out` folder.
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+After deploying, verify SEO output: `curl https://<your-domain>/` should show the H1,
+meta description, canonical link, and JSON-LD in the raw HTML.
