@@ -1,0 +1,26 @@
+# School Companion
+
+> School Companion ist eine kostenlose Schulplaner-App für iOS und Android, entwickelt für Schweizer Schülerinnen und Schüler. Sie vereint Stundenplan, Prüfungen und Noten in einer App – ergänzt durch Pomodoro-Timer, smarte Lernsessions und Lerngruppen. Kein Abo, keine versteckten Kosten.
+
+School Companion is a free school planner app for iOS and Android, built for students in Switzerland. It combines timetable, exams, and grades in one app — plus a Pomodoro timer, smart study sessions, and study groups. Free, no subscription.
+
+## Funktionen
+
+- Stundenplan: farbcodierte Tages-, Wochen- und Monatsansicht mit Lehrpersonen, Zimmern und Pausen
+- Prüfungen: Übersicht mit Countdown und Erinnerungen
+- Noten: Durchschnitte, Notenziele und integrierter Matura-Rechner
+- Fokus: Pomodoro-Timer und smarte Lernsessions
+- Lerngruppen: Freundescode teilen und gemeinsam lernen
+- Sync: Account hält alle Geräte aktuell, funktioniert auch offline
+
+## Links
+
+- [Website](https://schoolcompanion.ch/)
+- [App Store (iOS)](https://apps.apple.com/ch/app/school-companion-production/id6760979206)
+- [Google Play (Android)](https://play.google.com/store/apps/details?id=app.school_companion)
+- [Datenschutzerklärung](https://schoolcompanion.ch/privacy/)
+- [Nutzungsbedingungen](https://schoolcompanion.ch/terms/)
+
+## Kontakt
+
+- E-Mail: info@serviweb.ch

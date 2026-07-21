@@ -9,6 +9,10 @@ export const metadata: Metadata = {
     template: `%s — ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
+  applicationName: APP_NAME,
+  category: "education",
+  // iOS Safari Smart App Banner pointing at the App Store listing.
+  itunes: { appId: "6760979206" },
   openGraph: {
     type: "website",
     locale: "de_CH",
@@ -37,7 +41,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="de">
+    <html lang="de-CH">
       <body>{children}</body>
     </html>
   );
