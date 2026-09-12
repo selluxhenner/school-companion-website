@@ -165,6 +165,10 @@ export const MATURA_FAQS = [
     a: "Der Rechner setzt das Maturitätsprüfungsreglement des Gymnasiums des Kantons St.Gallen um und ist mit dem Beispiel der Kantonsschule Wil geprüft. Die beiden Bestehensregeln – Saldo und höchstens vier ungenügende Noten – sind schweizweit gleich (Maturitätsanerkennungsverordnung, Art. 26). Welche Fächer geprüft werden und aus welchem Jahr die Erfahrungsnote stammt, regelt jeder Kanton selbst.",
   },
   {
+    q: "Kann ich ein Ziel setzen und Szenarien vergleichen?",
+    a: "Ja. Als Ziel wählst du «Bestehen» oder einen Mindestschnitt, zum Beispiel 5.0. Für jede offene Prüfung kannst du eine realistische und eine Best-Case-Note schätzen. Der Rechner zeigt drei Szenarien nebeneinander: Minimum (was die Prüfungen ohne Schätzung mindestens bringen müssen), Realistisch und Sehr gut – jeweils mit Saldo, Anzahl ungenügender Noten, Schnitt und ob das Ziel erreicht ist.",
+  },
+  {
     q: "Wo werden meine Noten gespeichert?",
     a: "Nur in deinem Browser. Nichts wird an einen Server geschickt. Löschst du die Website-Daten oder tippst auf Zurücksetzen, sind sie weg.",
   },

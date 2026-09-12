@@ -12,8 +12,8 @@ const POINTS = [
     line: "Eine Zahl für alle offenen Prüfungen — und ein Plan, der die Arbeit nach deinen Stärken verteilt.",
   },
   {
-    title: "Wunschnoten durchspielen",
-    line: "Trag ein, was du dir in einer Prüfung zutraust, und sieh, was die anderen dann mindestens bringen müssen.",
+    title: "Ziel setzen, Szenarien vergleichen",
+    line: "Bestehen oder ein Schnitt von 5.0? Schätze deine Prüfungen realistisch und sieh Minimum, Realistisch und Sehr gut nebeneinander.",
   },
 ];
 

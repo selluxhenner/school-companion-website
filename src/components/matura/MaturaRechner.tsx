@@ -3,16 +3,18 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { evaluate, parseGrade, type GradeEntry, type Grades, type Result, type Row } from "@/lib/matura/engine";
 import {
+  PASS,
+  effortOf,
   openSlots,
-  plan,
+  scenario as buildScenario,
   slotKey,
-  uniformFloor,
-  withWishes,
   type Effort,
-  type FloorResult,
-  type PlanResult,
+  type Estimate,
+  type Estimates,
+  type Goal,
+  type Scenario,
+  type ScenarioKind,
   type Slot,
-  type Wishes,
 } from "@/lib/matura/planner";
 import {
   DEFAULT_CHOICES,
@@ -41,7 +43,12 @@ const EFFORT: Record<Effort, { label: string; cls: string }> = {
   more: { label: "Deutlich mehr als bisher", cls: "bg-warning/30 text-ink" },
   much: { label: "Sehr viel mehr als bisher", cls: "bg-accent/15 text-accent" },
 };
-const effortFor = (delta: number): Effort => (delta <= 0.05 ? "hold" : delta <= 0.55 ? "some" : delta <= 1.05 ? "more" : "much");
+
+const SCENARIOS: Array<{ kind: ScenarioKind; label: string; short: string }> = [
+  { kind: "min", label: "Minimum", short: "Min." },
+  { kind: "real", label: "Realistisch", short: "Real." },
+  { kind: "best", label: "Sehr gut", short: "Best" },
+];
 
 // Same hues the app gives these subjects (constants/colors.ts, resolveSubjectColor).
 const SUBJECT_COLOR: Record<string, string> = {
@@ -50,9 +57,10 @@ const SUBJECT_COLOR: Record<string, string> = {
 };
 
 const partLabel = (slot: Slot) => (slot.part === "written" ? "schriftlich" : slot.early ? "mündlich · Vormatura" : "mündlich");
+const goalLabel = (goal: Goal) => (goal.kind === "pass" ? "Bestehen" : `Schnitt ≥ ${goal.mean.toFixed(1)}`);
 
-const Chevron = ({ className = "" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={`h-[18px] w-[18px] shrink-0 text-ink-3 transition-transform group-open:rotate-180 ${className}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+const Chevron = () => (
+  <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-ink-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M6 9l6 6 6-6" />
   </svg>
 );
@@ -64,7 +72,9 @@ const Chevron = ({ className = "" }: { className?: string }) => (
 export default function MaturaRechner({ rules }: { rules?: ReactNode }) {
   const [choices, setChoices] = useState<Choices>(DEFAULT_CHOICES);
   const [grades, setGrades] = useState<Grades>({});
-  const [wishes, setWishes] = useState<Wishes>({});
+  const [estimates, setEstimates] = useState<Estimates>({});
+  const [goal, setGoal] = useState<Goal>(PASS);
+  const [kind, setKind] = useState<ScenarioKind>("min");
   const [hydrated, setHydrated] = useState(false);
 
   // Read localStorage after mount so the static HTML and the first client render agree.
@@ -73,7 +83,9 @@ export default function MaturaRechner({ rules }: { rules?: ReactNode }) {
     if (saved) {
       setChoices(saved.choices);
       setGrades(saved.grades);
-      setWishes(saved.wishes);
+      setEstimates(saved.estimates);
+      setGoal(saved.goal);
+      setKind(saved.scenario);
     }
     setHydrated(true);
   }, []);
@@ -82,40 +94,48 @@ export default function MaturaRechner({ rules }: { rules?: ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => save({ choices, grades, wishes }), 300);
+    saveTimer.current = window.setTimeout(() => save({ choices, grades, estimates, goal, scenario: kind }), 300);
     return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
-  }, [choices, grades, wishes, hydrated]);
+  }, [choices, grades, estimates, goal, kind, hydrated]);
 
   const subjects = useMemo(() => resolveSubjects(choices), [choices]);
   const result = useMemo(() => evaluate(subjects, grades), [subjects, grades]);
   const slots = useMemo(() => openSlots(subjects, grades), [subjects, grades]);
-  // Wished exams count as scored; floor and plan answer for what is still open after them.
-  const effective = useMemo(() => withWishes(grades, wishes, slots), [grades, wishes, slots]);
-  const wishedResult = useMemo(() => (effective === grades ? null : evaluate(subjects, effective)), [subjects, effective, grades]);
-  const floor = useMemo(() => uniformFloor(subjects, effective), [subjects, effective]);
-  const planned = useMemo(() => plan(subjects, effective), [subjects, effective]);
+  const scenarios = useMemo(
+    () => ({
+      min: buildScenario(subjects, grades, estimates, goal, "min"),
+      real: buildScenario(subjects, grades, estimates, goal, "real"),
+      best: buildScenario(subjects, grades, estimates, goal, "best"),
+    }),
+    [subjects, grades, estimates, goal],
+  );
+  const selected = scenarios[kind];
 
   const setGrade = (id: string, part: keyof GradeEntry, value: string) =>
     setGrades((g) => ({ ...g, [id]: { ...(g[id] ?? { en: "", written: "", oral: "" }), [part]: value } }));
-  const setWish = (key: string, value: string) => setWishes((w) => ({ ...w, [key]: value }));
+  const setEstimate = (key: string, field: keyof Estimate, value: string) =>
+    setEstimates((e) => ({ ...e, [key]: { ...(e[key] ?? { realistic: "", best: "" }), [field]: value } }));
 
   const reset = () => {
     if (!window.confirm("Alle Noten löschen?")) return;
     clear();
     setGrades({});
-    setWishes({});
+    setEstimates({});
+    setGoal(PASS);
+    setKind("min");
     setChoices(DEFAULT_CHOICES);
   };
+
+  const forecasting = result.status === "forecast" && slots.length > 0;
 
   return (
     <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10">
       {/* On a phone the verdict comes first; on a laptop it sits beside the grades and stays put. */}
       <aside className="order-first flex flex-col gap-7 lg:order-last lg:sticky lg:top-6">
-        <VerdictCard result={result} wished={wishedResult} floor={floor} planned={planned} />
-        {slots.length > 0 && planned.ready && (
-          <PlanList slots={slots} wishes={wishes} onWish={setWish} planned={planned} floor={floor} grades={grades} />
-        )}
-        <ShareBar result={wishedResult ?? result} floor={floor} />
+        <VerdictCard result={result} scenarios={scenarios} kind={kind} onKind={setKind} goal={goal} onGoal={setGoal} forecasting={forecasting} />
+        {forecasting && <Comparison scenarios={scenarios} kind={kind} onKind={setKind} goal={goal} />}
+        {forecasting && <PlanList slots={slots} estimates={estimates} onEstimate={setEstimate} scenario={selected} goal={goal} grades={grades} />}
+        <ShareBar result={result} scenario={forecasting ? selected : null} goal={goal} />
       </aside>
 
       <div className="flex flex-col gap-7">
@@ -150,8 +170,18 @@ export default function MaturaRechner({ rules }: { rules?: ReactNode }) {
 // verdict card — the one shadowed surface on the page
 // ---------------------------------------------------------------------------
 
-function VerdictCard({ result, wished, floor, planned }: { result: Result; wished: Result | null; floor: FloorResult; planned: PlanResult }) {
+function VerdictCard({ result, scenarios, kind, onKind, goal, onGoal, forecasting }: {
+  result: Result;
+  scenarios: Record<ScenarioKind, Scenario>;
+  kind: ScenarioKind;
+  onKind: (k: ScenarioKind) => void;
+  goal: Goal;
+  onGoal: (g: Goal) => void;
+  forecasting: boolean;
+}) {
   const { status } = result;
+  const sc = scenarios[kind];
+  const shown = forecasting && sc.result ? sc.result : result;
 
   const dot =
     status === "final" ? (result.passed ? "bg-success" : "bg-accent") : status === "forecast" ? "bg-warning" : "bg-line-2";
@@ -171,6 +201,25 @@ function VerdictCard({ result, wished, floor, planned }: { result: Result; wishe
         <span className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">{label}</span>
       </div>
 
+      {status !== "empty" && <GoalControl goal={goal} onGoal={onGoal} />}
+
+      {forecasting && (
+        <div role="tablist" aria-label="Szenario" className="grid grid-cols-3 rounded-control bg-surface-2 p-1">
+          {SCENARIOS.map((s) => (
+            <button
+              key={s.kind}
+              type="button"
+              role="tab"
+              aria-selected={kind === s.kind}
+              onClick={() => onKind(s.kind)}
+              className={`h-8 rounded-thumb text-[13px] font-semibold transition ${kind === s.kind ? "bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : "text-ink-2 hover:text-ink"}`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {status === "empty" && (
         <p className="text-[15px] leading-relaxed text-ink-2">
           Beginn mit den <strong className="font-semibold text-ink">Erfahrungsnoten</strong> — der letzten Jahresnote in
@@ -185,7 +234,7 @@ function VerdictCard({ result, wished, floor, planned }: { result: Result; wishe
         </p>
       )}
 
-      {status === "forecast" && <Answer floor={floor} planned={planned} wished={wished} passedOnForecast={result.passed} />}
+      {forecasting && (kind === "min" ? <MinAnswer sc={sc} goal={goal} /> : <ScenarioAnswer sc={sc} goal={goal} />)}
 
       {status === "final" && (
         <div className="flex flex-col gap-1">
@@ -194,8 +243,9 @@ function VerdictCard({ result, wished, floor, planned }: { result: Result; wishe
             {result.passed ? "Bestanden" : "Nicht bestanden"}
           </span>
           <span className="mt-1 text-sm text-ink-2">
-            Saldo {fmtSaldo(result.saldo)} · {result.insufficient} {result.insufficient === 1 ? "Note" : "Noten"} unter 4.0 · Durchschnitt{" "}
+            Saldo {fmtSaldo(result.saldo)} · {result.insufficient} {result.insufficient === 1 ? "Note" : "Noten"} unter 4.0 · Schnitt{" "}
             <span className="tnum">{result.mean.toFixed(2)}</span>
+            {goal.kind === "mean" && <> · Ziel {result.mean >= goal.mean ? "erreicht" : "nicht erreicht"}</>}
           </span>
         </div>
       )}
@@ -203,38 +253,69 @@ function VerdictCard({ result, wished, floor, planned }: { result: Result; wishe
       {status !== "empty" && (
         <>
           <div className="h-px bg-line" />
-          <Criteria result={result} />
+          <Criteria result={shown} />
         </>
       )}
     </section>
   );
 }
 
-function Answer({ floor, planned, wished, passedOnForecast }: { floor: FloorResult; planned: PlanResult; wished: Result | null; passedOnForecast: boolean }) {
-  // Every open exam carries a wish → nothing left to ask for; report where the wishes land.
-  if (floor.slots === 0 && wished) {
-    return (
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-ink-2">Mit deinen Wunschnoten</span>
-        <span className={`text-[34px] font-bold leading-none tracking-[-0.8px] ${wished.passed ? "text-brand-dark" : "text-accent"}`}>
-          {wished.passed ? "Bestanden" : "Nicht bestanden"}
-        </span>
-        <span className="mt-1 text-sm text-ink-2">
-          Saldo {fmtSaldo(wished.saldo)} · {wished.insufficient} unter 4.0
-        </span>
-      </div>
-    );
+function GoalControl({ goal, onGoal }: { goal: Goal; onGoal: (g: Goal) => void }) {
+  const sel = "h-8 rounded-thumb border border-line bg-surface px-2 text-[13px] font-medium text-ink";
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <label className="text-xs font-medium text-ink-2" htmlFor="goal-kind">Ziel</label>
+      <select
+        id="goal-kind"
+        className={sel}
+        value={goal.kind}
+        onChange={(e) => onGoal(e.target.value === "mean" ? { kind: "mean", mean: goal.kind === "mean" ? goal.mean : 5.0 } : PASS)}
+      >
+        <option value="pass">Bestehen</option>
+        <option value="mean">Schnitt mindestens</option>
+      </select>
+      {goal.kind === "mean" && (
+        <input
+          type="number"
+          inputMode="decimal"
+          min={4}
+          max={6}
+          step={0.1}
+          aria-label="Zielschnitt"
+          value={goal.mean}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            if (Number.isFinite(v)) onGoal({ kind: "mean", mean: Math.min(6, Math.max(4, Math.round(v * 10) / 10)) });
+          }}
+          className={`tnum w-[68px] text-center ${sel}`}
+        />
+      )}
+    </div>
+  );
+}
+
+/** The "min" scenario: what the exams without a realistic estimate must bring. */
+function MinAnswer({ sc, goal }: { sc: Scenario; goal: Goal }) {
+  const floor = sc.floor!, planned = sc.plan!;
+  const goalText = goal.kind === "mean" ? `Für einen Schnitt von ${goal.mean.toFixed(1)} brauchst du` : "Das brauchst du noch";
+  const anyEstimate = sc.grades.some((g) => g.source === "estimate");
+
+  // Every open exam carries a realistic estimate → nothing left to ask for.
+  if (floor.slots === 0 && sc.result) {
+    return <ScenarioAnswer sc={sc} goal={goal} title="Mit deinen realistischen Noten" />;
   }
 
   if (floor.grade === null) {
     return (
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-ink-2">Das brauchst du noch</span>
+        <span className="text-xs font-medium text-ink-2">{goalText}</span>
         <span className="text-[28px] font-bold leading-tight tracking-[-0.5px] text-accent">Nicht erreichbar</span>
         <p className="mt-1 text-sm leading-relaxed text-ink-2">
-          {wished
-            ? "Mit diesen Wunschnoten reicht auch eine 6.0 in den übrigen Prüfungen nicht mehr. Setz eine Wunschnote höher."
-            : "Auch eine 6.0 in allen offenen Prüfungen reicht für den Saldo nicht mehr. Sprich mit deiner Klassenlehrperson."}
+          {anyEstimate
+            ? "Mit diesen realistischen Noten reicht auch eine 6.0 in den übrigen Prüfungen nicht. Setz eine Schätzung höher oder das Ziel tiefer."
+            : goal.kind === "mean"
+              ? "Auch eine 6.0 in allen offenen Prüfungen erreicht diesen Schnitt nicht. Setz das Ziel tiefer."
+              : "Auch eine 6.0 in allen offenen Prüfungen reicht für den Saldo nicht mehr. Sprich mit deiner Klassenlehrperson."}
         </p>
       </div>
     );
@@ -243,7 +324,7 @@ function Answer({ floor, planned, wished, passedOnForecast }: { floor: FloorResu
   const tone = floor.grade <= 4 ? "text-brand-dark" : floor.grade <= 5 ? "text-yellow" : "text-accent";
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-ink-2">{wished ? "Das brauchst du in den übrigen Prüfungen" : "Das brauchst du noch"}</span>
+      <span className="text-xs font-medium text-ink-2">{anyEstimate ? `${goalText} in den übrigen Prüfungen` : goalText}</span>
       <div className="flex items-baseline gap-2.5">
         <span className={`tnum text-[44px] font-bold leading-none tracking-[-1px] ${tone}`}>{fmt(floor.grade)}</span>
         <span className="text-sm text-ink-2">
@@ -252,8 +333,8 @@ function Answer({ floor, planned, wished, passedOnForecast }: { floor: FloorResu
       </div>
       <p className="mt-1 text-sm leading-relaxed text-ink-2">
         {floor.slots === 1
-          ? "Schaffst du das, ist die Matura bestanden."
-          : "Schaffst du das überall, ist die Matura bestanden — egal wie der Rest ausfällt."}
+          ? `Schaffst du das, ist das Ziel «${goalLabel(goal)}» erreicht.`
+          : `Schaffst du das überall, ist das Ziel «${goalLabel(goal)}» erreicht — egal wie der Rest ausfällt.`}
         {planned.delta !== null && planned.effort && (
           <>
             {" "}
@@ -263,10 +344,26 @@ function Answer({ floor, planned, wished, passedOnForecast }: { floor: FloorResu
             </span>
           </>
         )}
-        {!passedOnForecast && floor.grade > 4 && !wished && (
-          <span className="block pt-1 text-accent">Mit deinen Erfahrungsnoten allein wäre es nicht bestanden.</span>
-        )}
       </p>
+    </div>
+  );
+}
+
+/** "real" and "best": where those grades land. */
+function ScenarioAnswer({ sc, goal, title }: { sc: Scenario; goal: Goal; title?: string }) {
+  const r = sc.result;
+  if (!r) return null;
+  const heading = title ?? (sc.kind === "best" ? "Wenn es sehr gut läuft" : "Wenn es realistisch läuft");
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-medium text-ink-2">{heading}</span>
+      <span className={`text-[34px] font-bold leading-none tracking-[-0.8px] ${r.passed ? "text-brand-dark" : "text-accent"}`}>
+        {r.passed ? "Bestanden" : "Nicht bestanden"}
+      </span>
+      <span className="mt-1 text-sm text-ink-2">
+        Schnitt <span className="tnum">{r.mean.toFixed(2)}</span> · Ziel «{goalLabel(goal)}»{" "}
+        <span className={sc.reached ? "font-medium text-brand-dark" : "font-medium text-accent"}>{sc.reached ? "erreicht" : "nicht erreicht"}</span>
+      </span>
     </div>
   );
 }
@@ -314,81 +411,119 @@ function Criteria({ result }: { result: Result }) {
 }
 
 // ---------------------------------------------------------------------------
-// plan — every open exam: type a Wunschnote, or read the minimum the rest must bring
+// comparison — the three scenarios side by side
 // ---------------------------------------------------------------------------
 
-function PlanList({ slots, wishes, onWish, planned, floor, grades }: {
+function Comparison({ scenarios, kind, onKind, goal }: { scenarios: Record<ScenarioKind, Scenario>; kind: ScenarioKind; onKind: (k: ScenarioKind) => void; goal: Goal }) {
+  return (
+    <section aria-label="Vergleich der Szenarien" className="grid grid-cols-3 overflow-hidden rounded-card border border-line bg-surface">
+      {SCENARIOS.map((s, i) => {
+        const sc = scenarios[s.kind];
+        const r = sc.result;
+        const active = kind === s.kind;
+        return (
+          <button
+            key={s.kind}
+            type="button"
+            onClick={() => onKind(s.kind)}
+            aria-pressed={active}
+            className={`flex flex-col gap-1.5 px-3 py-3 text-left transition ${i > 0 ? "border-l border-line" : ""} ${active ? "bg-brand-soft/60" : "hover:bg-surface-2"}`}
+          >
+            <span className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">{s.label}</span>
+            {r ? (
+              <>
+                <span className={`text-[15px] font-semibold ${sc.reached ? "text-brand-dark" : "text-accent"}`}>
+                  {sc.reached ? "Ziel ✓" : r.passed ? "Ziel ✗" : "Nicht best."}
+                </span>
+                <span className="tnum text-xs text-ink-2">Schnitt {r.mean.toFixed(2)}</span>
+                <span className="tnum text-xs text-ink-2">Saldo {fmtSaldo(r.saldo)} · {r.insufficient} u. 4</span>
+              </>
+            ) : (
+              <span className="text-[15px] font-semibold text-accent">—</span>
+            )}
+          </button>
+        );
+      })}
+      <p className="col-span-3 border-t border-line px-3 py-2 text-[11px] leading-relaxed text-ink-3">
+        Ziel: {goalLabel(goal)}. Minimum nimmt deine realistischen Schätzungen als gegeben und rechnet den Rest aus.
+      </p>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// plan — every open exam: realistic and best-case estimates, plus the selected scenario's grade
+// ---------------------------------------------------------------------------
+
+function PlanList({ slots, estimates, onEstimate, scenario, goal, grades }: {
   slots: Slot[];
-  wishes: Wishes;
-  onWish: (key: string, value: string) => void;
-  planned: PlanResult;
-  floor: FloorResult;
+  estimates: Estimates;
+  onEstimate: (key: string, field: keyof Estimate, value: string) => void;
+  scenario: Scenario;
+  goal: Goal;
   grades: Grades;
 }) {
-  const targetOf = new Map(planned.targets.map((t) => [slotKey(t.slot), t]));
-  const anyWish = slots.some((s) => parseGrade(wishes[slotKey(s)]) !== null);
-  const unreachable = planned.delta === null && floor.slots > 0;
+  const gradeOf = new Map(scenario.grades.map((g) => [slotKey(g.slot), g]));
+  const col = SCENARIOS.find((s) => s.kind === scenario.kind)!;
+  const anyEstimate = slots.some((s) => parseGrade(estimates[slotKey(s)]?.realistic) !== null || parseGrade(estimates[slotKey(s)]?.best) !== null);
 
   return (
     <section aria-labelledby="plan-heading" className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between px-1">
         <h2 id="plan-heading" className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">
-          Dein Plan · Wunsch und Minimum
+          Offene Prüfungen
         </h2>
-        {planned.delta !== null && (
+        {scenario.kind === "min" && scenario.plan?.delta !== null && scenario.plan?.delta !== undefined && (
           <span className="tnum text-xs font-medium text-ink-2">
-            Erfahrungsnote {planned.delta >= 0 ? "+" : "−"}{Math.abs(planned.delta).toFixed(1)}
+            Erfahrungsnote {scenario.plan.delta >= 0 ? "+" : "−"}{Math.abs(scenario.plan.delta).toFixed(1)}
           </span>
         )}
       </div>
       <div className="overflow-hidden rounded-card border border-line bg-surface">
-        <div className="flex items-center gap-3 border-b border-line bg-surface-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">
+        <div className="flex items-center gap-2.5 border-b border-line bg-surface-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">
           <span className="flex-1">Prüfung</span>
-          <span className="w-14 text-center">Wunsch</span>
-          <span className="w-12 text-right">Min.</span>
+          <span className="w-14 text-center">Realist.</span>
+          <span className="w-14 text-center">Sehr gut</span>
+          <span className="w-11 text-right">{col.short}</span>
         </div>
         {slots.map((slot) => {
           const key = slotKey(slot);
-          const wish = wishes[key] ?? "";
-          const wishN = parseGrade(wish);
-          const target = targetOf.get(key);
+          const est = estimates[key] ?? { realistic: "", best: "" };
+          const g = gradeOf.get(key);
           const en = parseGrade(grades[slot.subject.id]?.en);
-          const effort = target && en !== null ? EFFORT[effortFor(target.grade - en)] : null;
+          const effort = scenario.kind === "min" && g?.source === "plan" && g.grade !== null && en !== null ? EFFORT[effortOf(g.grade - en)] : null;
+          const gradeCls = g?.source === "plan" ? "text-ink" : g?.source === "estimate" ? "text-ink-3" : "text-ink-2";
           return (
-            <div key={key} className="flex items-center gap-3 border-t border-line px-4 py-2.5 first:border-t-0">
+            <div key={key} className="flex items-center gap-2.5 border-t border-line px-4 py-2.5 first:border-t-0">
               <span className="h-7 w-1 shrink-0 rounded-sm" style={{ background: SUBJECT_COLOR[slot.subject.id] }} aria-hidden="true" />
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-[15px] font-semibold">{slot.subject.name}</span>
                 <span className="truncate text-xs text-ink-2">
                   {partLabel(slot)} · bisher <span className="tnum">{fmt(en)}</span>
-                  {effort && wishN === null && <span className={`ml-1.5 rounded-tag px-1.5 py-px text-[11px] font-medium ${effort.cls}`}>{effort.label}</span>}
+                  {effort && <span className={`ml-1.5 rounded-tag px-1.5 py-px text-[11px] font-medium ${effort.cls}`}>{effort.label}</span>}
                 </span>
               </div>
-              <GradeInput
-                value={wish}
-                parsed={wishN}
-                step={slot.step}
-                label={`${slot.subject.name} ${partLabel(slot)} — Wunschnote`}
-                onChange={(v) => onWish(key, v)}
-                placeholder="—"
-              />
-              <span className={`tnum w-12 text-right text-lg font-semibold ${wishN !== null ? "text-ink-3" : unreachable ? "text-accent" : ""}`}>
-                {wishN !== null ? "✓" : unreachable ? "—" : target ? fmt(target.grade) : "—"}
+              <GradeInput value={est.realistic} parsed={parseGrade(est.realistic)} step={slot.step} label={`${slot.subject.name} ${partLabel(slot)} — realistisch`} onChange={(v) => onEstimate(key, "realistic", v)} placeholder="—" />
+              <GradeInput value={est.best} parsed={parseGrade(est.best)} step={slot.step} label={`${slot.subject.name} ${partLabel(slot)} — sehr gut`} onChange={(v) => onEstimate(key, "best", v)} placeholder="—" />
+              <span className={`tnum w-11 text-right text-lg font-semibold ${g?.grade === null ? "text-accent" : gradeCls}`} title={g?.source === "estimate" ? "deine Schätzung" : g?.source === "default" ? "Standard" : undefined}>
+                {g ? fmt(g.grade) : "—"}
               </span>
             </div>
           );
         })}
       </div>
       <p className="px-1 text-xs leading-relaxed text-ink-3">
-        {anyWish
-          ? "Wunschnoten gelten als erreicht. Min. ist, was die übrigen Prüfungen dann mindestens bringen müssen — nach deinen Stärken verteilt. Leer lassen, um die Prüfung wieder offen zu rechnen."
-          : "Trag ein, was du dir in einer Prüfung zutraust. Min. zeigt, was die anderen dann noch bringen müssen — jede um denselben Betrag über deiner Erfahrungsnote, ein starkes Fach trägt ein schwaches."}
-        {planned.delta !== null && planned.delta < 0 && (
-          <> Du hast Spielraum: im Schnitt {Math.abs(planned.delta).toFixed(1)} unter deiner Erfahrungsnote reicht noch.</>
+        {scenario.kind === "min" && (
+          <>
+            <strong className="font-medium text-ink-2">Min.</strong> ist, was jede Prüfung mindestens bringen muss, damit das Ziel «{goalLabel(goal)}» steht — jede um denselben Betrag über deiner Erfahrungsnote, ein starkes Fach trägt ein schwaches.
+            {anyEstimate ? " Prüfungen mit realistischer Schätzung gelten als gegeben; Min. gilt für den Rest." : " Trag ein, was du dir realistisch zutraust, und Min. rechnet nur noch für die übrigen."}
+            {scenario.floor?.grade !== null && scenario.floor && scenario.floor.slots > 0 && (
+              <> Oder überall gleich: <span className="tnum font-medium text-ink-2">{fmt(scenario.floor.grade)}</span>.</>
+            )}
+          </>
         )}
-        {floor.grade !== null && floor.slots > 0 && (
-          <> Oder überall gleich: <span className="tnum font-medium text-ink-2">{fmt(floor.grade)}</span>.</>
-        )}
+        {scenario.kind === "real" && "Realistisch nimmt deine Schätzung; wo keine steht, deine Erfahrungsnote — du schneidest ab wie bisher."}
+        {scenario.kind === "best" && "Sehr gut nimmt deine Best-Case-Schätzung; wo keine steht, Erfahrungsnote + 0.5."}
       </p>
     </section>
   );
@@ -543,18 +678,26 @@ function GradeInput({ value, parsed, step, label, onChange, placeholder }: { val
 // share
 // ---------------------------------------------------------------------------
 
-function ShareBar({ result, floor }: { result: Result; floor: FloorResult }) {
+function ShareBar({ result, scenario, goal }: { result: Result; scenario: Scenario | null; goal: Goal }) {
   const [note, setNote] = useState<string | null>(null);
   const canShare = result.status === "forecast" || result.status === "final";
   const url = `${SITE_URL}${MATURA_PATH}`;
 
   const share = async () => {
-    const data: ShareData =
-      result.status === "final" || floor.slots === 0
-        ? { headline: "", big: "", sub: `Saldo ${fmtSaldo(result.saldo)} · ${result.insufficient} von 4 unter 4.0`, tone: result.passed ? "pass" : "fail", saldo: fmtSaldo(result.saldo), below: `${result.insufficient} / 4` }
-        : floor.grade === null
-          ? { headline: "Das brauche ich noch", big: "—", sub: "Nicht mehr erreichbar.", tone: "fail", saldo: fmtSaldo(result.saldo), below: `${result.insufficient} / 4` }
-          : { headline: "Ich brauche noch", big: fmt(floor.grade), sub: `in ${floor.slots === 1 ? "der offenen Prüfung" : `jeder der ${floor.slots} offenen Prüfungen`} — dann ist die Matura bestanden.`, tone: "forecast", saldo: fmtSaldo(result.saldo), below: `${result.insufficient} / 4` };
+    let data: ShareData;
+    const stats = (r: Result) => ({ saldo: fmtSaldo(r.saldo), below: `${r.insufficient} / 4` });
+    if (!scenario || result.status === "final") {
+      data = { headline: "", big: "", sub: `Saldo ${fmtSaldo(result.saldo)} · ${result.insufficient} von 4 unter 4.0 · Schnitt ${result.mean.toFixed(2)}`, tone: result.passed ? "pass" : "fail", ...stats(result) };
+    } else if (scenario.kind !== "min" || (scenario.floor && scenario.floor.slots === 0)) {
+      const r = scenario.result ?? result;
+      const label = scenario.kind === "best" ? "Wenn es sehr gut läuft" : "Realistisch";
+      data = { headline: label, big: "", sub: `${label}: Schnitt ${r.mean.toFixed(2)} · Ziel «${goalLabel(goal)}» ${scenario.reached ? "erreicht" : "nicht erreicht"}`, tone: r.passed ? "pass" : "fail", ...stats(r) };
+    } else if (scenario.floor?.grade == null) {
+      data = { headline: "Das brauche ich noch", big: "—", sub: "Nicht mehr erreichbar.", tone: "fail", ...stats(result) };
+    } else {
+      const f = scenario.floor;
+      data = { headline: goal.kind === "mean" ? `Für einen Schnitt von ${goal.mean.toFixed(1)} brauche ich` : "Ich brauche noch", big: fmt(f.grade), sub: `in ${f.slots === 1 ? "der offenen Prüfung" : `jeder der ${f.slots} offenen Prüfungen`} — dann ist das Ziel erreicht.`, tone: "forecast", ...stats(result) };
+    }
     await document.fonts?.load?.("800 220px Inter").catch(() => undefined);
     const r = await shareImage(drawShareImage(data));
     setNote(r === "downloaded" ? "Bild gespeichert — schick es in den Klassenchat." : r === "failed" ? "Teilen abgebrochen." : null);

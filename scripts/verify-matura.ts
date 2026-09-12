@@ -4,7 +4,7 @@
  * four grades below 4, bestanden. Run: npm run verify
  */
 import { evaluate, roundHalf, roundTenth, type Grades } from "../src/lib/matura/engine";
-import { openSlots, plan, slotKey, uniformFloor, withWishes } from "../src/lib/matura/planner";
+import { openSlots, plan, scenario, slotKey, uniformFloor, withEstimates } from "../src/lib/matura/planner";
 import { DEFAULT_CHOICES, resolveSubjects } from "../src/lib/matura/rules";
 
 let failed = 0;
@@ -80,14 +80,32 @@ ok(p.delta !== null && p.targets.length === 10, `plan delta ${p.delta} over the 
 ok(p.targets.every((t) => t.slot.part !== "oral" || Math.abs(t.grade * 2 - Math.round(t.grade * 2)) < 1e-9), "oral targets are half grades");
 ok(p.targets.every((t) => t.slot.part !== "written" || Math.abs(t.grade * 10 - Math.round(t.grade * 10)) < 1e-9), "written targets are tenths");
 
-console.log("\nWunschnoten: a wished exam counts as scored, the floor answers for the rest");
+console.log("\nEstimates: a realistic estimate counts as scored, the floor answers for the rest");
 const slotsB = openSlots(subjects, before);
-const wishes = Object.fromEntries(slotsB.filter((s) => s.subject.id !== "de").map((s) => [slotKey(s), "4.0"]));
-const withW = withWishes(before, wishes, slotsB);
-const fW = uniformFloor(subjects, withW);
-ok(fW.slots === 2, `2 open parts left after wishing 8 (${fW.slots})`);
+const est = Object.fromEntries(slotsB.filter((s) => s.subject.id !== "de").map((s) => [slotKey(s), { realistic: "4.0", best: "" }]));
+const fixed = withEstimates(before, est, slotsB, "realistic");
+const fW = uniformFloor(subjects, fixed);
+ok(fW.slots === 2, `2 open parts left after estimating 8 (${fW.slots})`);
 ok(fW.grade !== null, `floor for Deutsch with 4.0 everywhere else: ${fW.grade}`);
-ok(withWishes(before, {}, slotsB) === before, "no wishes → same grades object");
+ok(withEstimates(before, {}, slotsB, "realistic") === before, "no estimates → same grades object");
+
+console.log("\nGoal: a mean of 5.0 needs more than passing");
+const fPass = uniformFloor(subjects, before, { kind: "pass" });
+const f50 = uniformFloor(subjects, before, { kind: "mean", mean: 5.0 });
+ok(fPass.grade !== null && f50.grade !== null && f50.grade > fPass.grade, `floor pass ${fPass.grade} < floor for 5.0 ${f50.grade}`);
+const f60 = uniformFloor(subjects, before, { kind: "mean", mean: 6.0 });
+ok(f60.grade === null, "a 6.0 mean is out of reach for this student");
+
+console.log("\nScenarios");
+const sMin = scenario(subjects, before, est, { kind: "pass" }, "min");
+ok(sMin.grades.filter((g) => g.source === "estimate").length === 8 && sMin.grades.filter((g) => g.source === "plan").length === 2, "min: 8 estimates + 2 planned");
+ok(sMin.result !== null && sMin.reached, `min: goal reached with those grades (Schnitt ${sMin.result?.mean})`);
+const sReal = scenario(subjects, before, {}, { kind: "pass" }, "real");
+ok(sReal.grades.every((g) => g.source === "default" && g.grade === g.en), "real without estimates = Erfahrungsnote everywhere");
+const sBest = scenario(subjects, before, {}, { kind: "pass" }, "best");
+ok(sBest.grades.every((g) => g.grade !== null && g.grade >= g.en && g.grade <= 6), "best without estimates = Erfahrungsnote + 0.5, capped at 6");
+ok(sBest.result !== null && sReal.result !== null && sBest.result.mean >= sReal.result.mean, `best mean ${sBest.result?.mean} ≥ real mean ${sReal.result?.mean}`);
+ok(sBest.grades.every((g) => g.slot.part !== "oral" || Math.abs(g.grade! * 2 - Math.round(g.grade! * 2)) < 1e-9), "best oral defaults are half grades");
 
 console.log("\nA non-exam Erfahrungsnote typed in tenths is rounded to a half (Art. 15 Abs. 2)");
 const tenths = evaluate(subjects, { ...sheet, bio: { en: "5.4", written: "", oral: "" }, ph: { en: "2.9", written: "", oral: "" } });
