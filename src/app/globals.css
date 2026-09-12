@@ -1,21 +1,47 @@
 @import "tailwindcss";
 
 /*
- * TODO: BRAND_COLORS — cyan sampled from the v2 app UI (#4FCDC2 buttons/
- * tiles, splash gradient #6CDED6 → #44B9B1); adjust if it drifts from the
- * app's exact palette.
- *   --color-brand  : primary cyan (app buttons / splash)
- *   --color-accent : coral used for exams & alerts
- *   --color-ink    : dark navy used for headings in the app
+ * BRAND TOKENS — mirrored 1:1 from the app's `constants/colors.ts` (light palette)
+ * and `constants/theme.ts`. Change them there first, then here.
  */
 @theme {
-  --color-brand: #4fcdc2;
-  --color-brand-dark: #2b9c92;
-  --color-brand-soft: #e6f9f7;
-  --color-accent: #f97066;
-  --color-ink: #2d3958;
+  /* colors.primary */
+  --color-brand: #4ecdc4;        /* primary.main */
+  --color-brand-dark: #38a89d;   /* primary.dark */
+  --color-brand-soft: #e8fffe;   /* primary.50 */
+  --color-brand-500: #2a9990;
+  --color-brand-600: #1f7b74;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+  /* colors.accent / colors.status */
+  --color-accent: #ff6b6b;       /* coral, error */
+  --color-accent-light: #ff9494;
+  --color-success: #51cf66;
+  --color-warning: #ffd93d;
+  --color-yellow: #eccd52;       /* accent.yellow — the "needs more" tone */
+
+  /* colors.text */
+  --color-ink: #2c3e50;          /* text.primary */
+  --color-ink-2: #7f8c8d;        /* text.secondary */
+  --color-ink-3: #95a5a6;        /* text.tertiary */
+
+  /* colors.background / colors.border */
+  --color-ground: #fafbfc;       /* background.primary */
+  --color-surface: #ffffff;      /* background.card */
+  --color-surface-2: #f8f9fa;    /* background.light */
+  --color-line: #e8ecef;         /* border.light */
+  --color-line-2: #d1d8dd;       /* border.medium */
+
+  /* theme.radius */
+  --radius-tag: 6px;
+  --radius-thumb: 8px;
+  --radius-control: 10px;
+  --radius-card: 12px;
+  --radius-sheet: 20px;
+}
+
+/* theme.fonts — Inter, loaded by next/font in layout.tsx */
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -25,4 +51,9 @@ html {
 
 body {
   @apply bg-white text-ink antialiased;
+}
+
+/* theme.numeric — changing numbers must not shift width */
+.tnum {
+  font-variant-numeric: tabular-nums;
 }

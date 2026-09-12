@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
 import { APP_NAME, APP_ONE_LINER, APP_DESCRIPTION, SITE_URL } from "@/lib/site";
+
+// The app's typeface (constants/theme.ts: Inter 400/500/600/700), self-hosted at build.
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -41,7 +46,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="de-CH">
+    <html lang="de-CH" className={inter.variable}>
       <body>{children}</body>
     </html>
   );

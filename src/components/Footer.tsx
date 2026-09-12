@@ -11,6 +11,11 @@ export default function Footer() {
         <nav aria-label="Footer">
           <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <li>
+              <Link href="/matura/" className="hover:text-ink">
+                Matura-Rechner
+              </Link>
+            </li>
+            <li>
               <Link href="/privacy/" className="hover:text-ink">
                 Datenschutz
               </Link>
