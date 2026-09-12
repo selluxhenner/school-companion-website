@@ -66,10 +66,8 @@ replace it if the branding changes.
 ## Deploy
 
 `npm run build` produces a fully static site in `/out` — every page is pre-rendered HTML.
-
-- **Vercel**: import the repo; it detects Next.js and the static export automatically.
-- **Netlify**: build command `npm run build`, publish directory `out`.
-- **Anything else** (GitHub Pages, Cloudflare Pages, plain nginx): upload the `/out` folder.
+The site is self-hosted: upload the `/out` folder to the nginx server that serves
+schoolcompanion.ch. No hosting platform is connected to this repo.
 
 After deploying, verify SEO output: `curl https://<your-domain>/` should show the H1,
 meta description, canonical link, and JSON-LD in the raw HTML.
