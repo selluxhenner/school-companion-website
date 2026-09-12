@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Hero from "@/components/Hero";
 import Screenshots from "@/components/Screenshots";
 import Features from "@/components/Features";
+import MaturaTeaser from "@/components/MaturaTeaser";
 import HowItWorks from "@/components/HowItWorks";
 import Faq from "@/components/Faq";
 import DownloadCta from "@/components/DownloadCta";
@@ -88,6 +89,7 @@ export default function Home() {
       <main>
         <Screenshots />
         <Features />
+        <MaturaTeaser />
         <HowItWorks />
         <Faq />
         <DownloadCta />

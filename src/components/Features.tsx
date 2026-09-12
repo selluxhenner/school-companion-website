@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { FEATURES } from "@/lib/site";
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -62,6 +63,11 @@ export default function Features() {
               </span>
               <h3 className="mt-4 text-lg font-semibold">{feature.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{feature.line}</p>
+              {"href" in feature && (
+                <Link href={feature.href} className="mt-3 inline-block text-sm font-semibold text-brand-dark hover:underline">
+                  {feature.cta} →
+                </Link>
+              )}
             </li>
           ))}
         </ul>
