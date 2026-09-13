@@ -60,7 +60,7 @@ export default function MaturaTeaser() {
         </div>
         <div className="mx-auto w-full max-w-[300px] sm:max-w-[330px]">
           <PhoneFrame
-            src="/matura/preview.png"
+            src="/screenshots/matura.jpeg"
             alt="Matura-Rechner: Prognose mit Saldo, Anzahl Noten unter 4.0 und der Note, die in den offenen Prüfungen noch nötig ist"
           />
         </div>

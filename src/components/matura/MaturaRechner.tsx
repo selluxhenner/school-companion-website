@@ -627,21 +627,22 @@ function SubjectRow({ row, entry, onChange }: { row: Row; entry: GradeEntry | un
         </span>
         <span className={`tnum min-w-[46px] rounded-tag px-2 py-[3px] text-center text-xs font-medium sm:order-last ${saldoCls}`}>{fmtSaldo(row.saldo)}</span>
       </div>
-      {hasOral && (
-        <div className="flex gap-2.5 pl-4 sm:pl-0">
-          <Cell label={enLabel}>
-            <GradeInput value={e.en} parsed={row.en} step={0.5} label={`${def.name} — ${enLabel}`} onChange={(v) => onChange("en", v)} />
-          </Cell>
-          {hasWritten && (
+      {/* Exam subjects: the cells always sit on their own line. Others: inline on a phone, right-aligned on wider screens. */}
+      <div className={`gap-2.5 pl-4 sm:pl-0 ${hasOral ? "flex" : "hidden sm:flex"}`}>
+        <Cell label={enLabel}>
+          <GradeInput value={e.en} parsed={row.en} step={0.5} label={`${def.name} — ${enLabel}`} onChange={(v) => onChange("en", v)} />
+        </Cell>
+        {hasWritten && (
             <Cell label="schriftlich">
               <GradeInput value={e.written} parsed={row.written} step={0.1} label={`${def.name} — schriftlich`} onChange={(v) => onChange("written", v)} />
             </Cell>
           )}
+        {hasOral && (
           <Cell label={def.exam === "oralEarly" ? "Vormatura" : "mündlich"}>
             <GradeInput value={e.oral} parsed={row.oral} step={0.5} label={`${def.name} — mündlich`} onChange={(v) => onChange("oral", v)} />
           </Cell>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
