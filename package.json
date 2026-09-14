@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "preview": "npx serve out",
-    "verify": "tsx scripts/verify-matura.ts"
+    "verify": "tsx scripts/verify-matura.ts",
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "next": "^15.3.3",

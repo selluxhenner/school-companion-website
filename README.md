@@ -66,8 +66,16 @@ replace it if the branding changes.
 ## Deploy
 
 `npm run build` produces a fully static site in `/out` — every page is pre-rendered HTML.
-The site is self-hosted: upload the `/out` folder to the nginx server that serves
-schoolcompanion.ch. No hosting platform is connected to this repo.
+The site is self-hosted on the nginx server behind schoolcompanion.ch (SSH host `hetzner`,
+web root `/var/www/schoolcompanion`). No hosting platform is connected to this repo.
+
+```bash
+npm run build && npm run deploy
+```
+
+`deploy` uploads `/out` over SSH and swaps it into place atomically; the previous root
+stays at `/var/www/schoolcompanion.old` until the next deploy (see `scripts/deploy.sh`
+for the one-line rollback).
 
 After deploying, verify SEO output: `curl https://<your-domain>/` should show the H1,
 meta description, canonical link, and JSON-LD in the raw HTML.
