@@ -37,7 +37,7 @@ export default function TermsPage() {
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Nutzungsbedingungen
           </h1>
-          <p className="mt-2 text-sm text-slate-500">Stand: 13. Juli 2026</p>
+          <p className="mt-2 text-sm text-slate-500">Stand: 22. Oktober 2026</p>
 
           <section className="mt-8 space-y-4 leading-relaxed text-slate-700">
             <p>

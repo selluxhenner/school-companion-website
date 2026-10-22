@@ -31,6 +31,11 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/delete-account/" className="hover:text-ink">
+                Konto löschen
+              </Link>
+            </li>
+            <li>
               <Link href="/terms/" className="hover:text-ink">
                 Nutzungsbedingungen
               </Link>
