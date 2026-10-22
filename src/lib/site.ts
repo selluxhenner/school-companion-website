@@ -21,7 +21,7 @@ export const SEO_TITLE =
 
 // TODO: APP_DESCRIPTION — 2–3 sentence paragraph of what the app does.
 export const APP_DESCRIPTION =
-  "School Companion vereint Stundenplan, Prüfungen und Noten in einer App – mit Pomodoro-Timer, smarten Lernsessions und Lerngruppen, um gemeinsam mit Freunden zu lernen. Gemacht für Schweizer Schülerinnen und Schüler. Kostenlos für iOS und Android – kein Abo, keine versteckten Kosten.";
+  "School Companion vereint Stundenplan, Prüfungen und Noten in einer App – mit Pomodoro-Timer und smarten Lernsessions. Gemacht für Schweizer Schülerinnen und Schüler. Kostenlos für iOS und Android – kein Abo, keine versteckten Kosten.";
 
 // Store listing URLs.
 export const APP_STORE_URL =
@@ -33,6 +33,10 @@ export const PLAY_STORE_URL =
 // TODO: CONTACT_EMAIL — support email for the store listings & privacy page.
 // (Email only — no phone number or address anywhere on this site.)
 export const CONTACT_EMAIL = "info@serviweb.ch";
+
+// /feedback/ posts here; the admin dashboard stores it and lists it for admins.
+// Its CORS allows only schoolcompanion.ch, www and localhost:3000/3001 (`npm run dev`).
+export const FEEDBACK_ENDPOINT = "https://admin.schoolcompanion.ch/api/feedback";
 
 /**
  * TODO: FEATURES — adjust titles/lines to match your store listing.
@@ -63,8 +67,8 @@ export const FEATURES = [
   },
   {
     icon: "social",
-    title: "Gemeinsam lernen",
-    line: "Teile deinen Code, tritt Lerngruppen bei und lernt zusammen.",
+    title: "Gemeinsam lernen – bald",
+    line: "Freundescode und Lerngruppen sind in Arbeit und kommen mit einem späteren Update.",
   },
   {
     icon: "sync",
@@ -81,7 +85,7 @@ export const FEATURES = [
 export const FAQS = [
   {
     q: "Was ist School Companion?",
-    a: "School Companion ist eine kostenlose Schulplaner-App für iOS und Android, die Stundenplan, Prüfungen und Noten in einer App vereint – ergänzt durch Pomodoro-Timer, smarte Lernsessions und Lerngruppen. Entwickelt für Schweizer Schülerinnen und Schüler.",
+    a: "School Companion ist eine kostenlose Schulplaner-App für iOS und Android, die Stundenplan, Prüfungen und Noten in einer App vereint – ergänzt durch Pomodoro-Timer und smarte Lernsessions. Entwickelt für Schweizer Schülerinnen und Schüler.",
   },
   {
     q: "Ist School Companion wirklich kostenlos?",
@@ -97,7 +101,7 @@ export const FAQS = [
   },
   {
     q: "Kann ich zusammen mit Freunden lernen?",
-    a: "Ja. Teile deinen persönlichen Freundescode, tritt Lerngruppen bei und lernt gemeinsam – mit geteilten Lernsessions und Prüfungsübersicht.",
+    a: "Noch nicht. Freundescode und Lerngruppen werden gerade überarbeitet und sind vorübergehend nicht verfügbar. Sie kommen mit einem späteren Update.",
   },
   {
     q: "Wie starte ich mit School Companion?",
@@ -124,8 +128,8 @@ export const SCREENSHOTS = [
   },
   {
     src: "/screenshots/social.jpeg",
-    alt: "Social-Ansicht mit Schülerprofil, persönlichem Freundescode und Lerngruppen",
-    caption: "Teile deinen Code und lerne gemeinsam mit Freunden.",
+    alt: "Profil-Ansicht mit Schülerprofil; Freundescode und Lerngruppen folgen mit einem späteren Update",
+    caption: "Dein Profil – Freundescode und Lerngruppen folgen bald.",
   },
 ] as const;
 
