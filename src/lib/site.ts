@@ -34,6 +34,10 @@ export const PLAY_STORE_URL =
 // (Email only — no phone number or address anywhere on this site.)
 export const CONTACT_EMAIL = "info@serviweb.ch";
 
+// /feedback/ posts here; the admin dashboard stores it and lists it for admins.
+// Its CORS allows only schoolcompanion.ch, www and localhost:3000/3001 (`npm run dev`).
+export const FEEDBACK_ENDPOINT = "https://admin.schoolcompanion.ch/api/feedback";
+
 /**
  * TODO: FEATURES — adjust titles/lines to match your store listing.
  * Icons are keys resolved in src/components/Features.tsx.

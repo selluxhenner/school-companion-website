@@ -91,6 +91,20 @@ export default function PrivacyPage() {
               verwendest &ndash; nicht, <em>was</em> du eingibst. Einzelheiten und die
               Möglichkeit, dies auszuschalten, stehen in Abschnitt 7.
             </p>
+            <p>
+              <strong>Feedback-Formular:</strong> Wenn du auf{" "}
+              <Link href="/feedback/" className="font-medium text-brand-dark underline">
+                schoolcompanion.ch/feedback
+              </Link>{" "}
+              eine Meldung sendest, speichern wir deinen Text, deine freiwilligen Angaben
+              (App-Version, Gerät, E-Mail-Adresse) und den Zeitpunkt. Wir nutzen sie nur, um
+              Fehler zu beheben, Ideen zu prüfen und dir zu antworten. Nur berechtigte
+              Administratoren sehen die Meldungen; wir geben sie nicht weiter. Zum Schutz vor
+              Missbrauch zählt der Server die Anfragen pro IP-Adresse kurzzeitig im
+              Arbeitsspeicher; die IP-Adresse wird mit deiner Meldung nicht gespeichert.
+              Bitte schreib keine Passwörter oder besonders sensible Angaben in die Meldung.
+              Meldungen werden nach 12 Monaten gelöscht, auf Wunsch früher (Abschnitt 9).
+            </p>
           </Section>
 
           <Section title="3. Zwecke der Bearbeitung">
