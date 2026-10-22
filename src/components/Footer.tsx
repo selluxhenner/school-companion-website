@@ -16,6 +16,16 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/support/" className="hover:text-ink">
+                Hilfe
+              </Link>
+            </li>
+            <li>
+              <Link href="/feedback/" className="hover:text-ink">
+                Feedback
+              </Link>
+            </li>
+            <li>
               <Link href="/privacy/" className="hover:text-ink">
                 Datenschutz
               </Link>

@@ -20,6 +20,8 @@ School Companion is a free school planner app for iOS and Android, built for stu
 - [Matura-Rechner](https://schoolcompanion.ch/matura/)
 - [App Store (iOS)](https://apps.apple.com/ch/app/school-companion-production/id6760979206)
 - [Google Play (Android)](https://play.google.com/store/apps/details?id=app.school_companion)
+- [Hilfe & Support](https://schoolcompanion.ch/support/)
+- [Feedback & Fehler melden](https://schoolcompanion.ch/feedback/)
 - [Datenschutzerklärung](https://schoolcompanion.ch/privacy/)
 - [Nutzungsbedingungen](https://schoolcompanion.ch/terms/)
 
