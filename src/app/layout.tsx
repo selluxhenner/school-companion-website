@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 import { APP_NAME, APP_ONE_LINER, APP_DESCRIPTION, SITE_URL } from "@/lib/site";
+import { UMAMI_DOMAINS, UMAMI_SRC, UMAMI_WEBSITE_ID } from "@/lib/umami";
 
 // The app's typeface (constants/theme.ts: Inter 400/500/600/700), self-hosted at build.
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -48,7 +50,18 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="de-CH" className={inter.variable}>
-      <body>{children}</body>
+      <body>
+        {children}
+        {UMAMI_WEBSITE_ID ? (
+          <Script
+            src={UMAMI_SRC}
+            strategy="afterInteractive"
+            defer
+            data-website-id={UMAMI_WEBSITE_ID}
+            data-domains={UMAMI_DOMAINS}
+          />
+        ) : null}
+      </body>
     </html>
   );
 }

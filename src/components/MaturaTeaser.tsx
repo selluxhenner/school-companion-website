@@ -1,6 +1,6 @@
 import Link from "next/link";
 import PhoneFrame from "./PhoneFrame";
-import { MATURA_PATH } from "@/lib/site";
+import { MATURA_PATH, PROMOTION_PATH } from "@/lib/site";
 
 const POINTS = [
   {
@@ -56,6 +56,9 @@ export default function MaturaTeaser() {
               Matura-Rechner öffnen
             </Link>
             <span className="text-sm text-slate-500">Kostenlos · 30 Sekunden</span>
+            <Link href={PROMOTION_PATH} className="text-sm font-semibold text-brand-dark hover:underline">
+              Promotion-Rechner
+            </Link>
           </div>
         </div>
         <div className="mx-auto w-full max-w-[300px] sm:max-w-[330px]">

@@ -28,6 +28,9 @@ import {
 import { clear, load, save } from "@/lib/matura/storage";
 import { drawShareImage, shareImage, type ShareData } from "@/lib/matura/share";
 import { MATURA_PATH, SITE_URL } from "@/lib/site";
+import { track } from "@/lib/analytics";
+import Chevron from "@/components/rechner/Chevron";
+import GradeInput from "@/components/rechner/GradeInput";
 
 // ---------------------------------------------------------------------------
 // formatting
@@ -58,12 +61,6 @@ const SUBJECT_COLOR: Record<string, string> = {
 
 const partLabel = (slot: Slot) => (slot.part === "written" ? "schriftlich" : slot.early ? "mündlich · Vormatura" : "mündlich");
 const goalLabel = (goal: Goal) => (goal.kind === "pass" ? "Bestehen" : `Schnitt ≥ ${goal.mean.toFixed(1)}`);
-
-const Chevron = () => (
-  <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-ink-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M6 9l6 6 6-6" />
-  </svg>
-);
 
 // ---------------------------------------------------------------------------
 // root
@@ -111,8 +108,15 @@ export default function MaturaRechner({ rules }: { rules?: ReactNode }) {
   );
   const selected = scenarios[kind];
 
-  const setGrade = (id: string, part: keyof GradeEntry, value: string) =>
+  // Once per page load, the first time a grade is typed — the "did anyone use it" number.
+  const firstGrade = useRef(false);
+  const setGrade = (id: string, part: keyof GradeEntry, value: string) => {
+    if (!firstGrade.current && value.trim()) {
+      firstGrade.current = true;
+      track("matura_first_grade");
+    }
     setGrades((g) => ({ ...g, [id]: { ...(g[id] ?? { en: "", written: "", oral: "" }), [part]: value } }));
+  };
   const setEstimate = (key: string, field: keyof Estimate, value: string) =>
     setEstimates((e) => ({ ...e, [key]: { ...(e[key] ?? { realistic: "", best: "" }), [field]: value } }));
 
@@ -656,25 +660,6 @@ function Cell({ label, children, inline = false }: { label: string; children: Re
   );
 }
 
-function GradeInput({ value, parsed, step, label, onChange, placeholder }: { value: string; parsed: number | null; step: 0.1 | 0.5; label: string; onChange: (v: string) => void; placeholder?: string }) {
-  const invalid = value.trim() !== "" && parsed === null;
-  const low = parsed !== null && parsed < 4;
-  return (
-    <input
-      type="text"
-      inputMode="decimal"
-      autoComplete="off"
-      aria-label={label}
-      placeholder={placeholder ?? (step === 0.5 ? "4.5" : "4.3")}
-      value={value}
-      onChange={(ev) => onChange(ev.target.value)}
-      className={`tnum h-9 w-14 shrink-0 rounded-thumb border bg-surface text-center text-sm text-ink placeholder:text-line-2 focus:outline-none focus:ring-2 focus:ring-brand/40 ${
-        invalid || low ? "border-accent" : "border-line"
-      }`}
-    />
-  );
-}
-
 // ---------------------------------------------------------------------------
 // share
 // ---------------------------------------------------------------------------
@@ -686,7 +671,7 @@ function ShareBar({ result, scenario, goal }: { result: Result; scenario: Scenar
 
   const share = async () => {
     let data: ShareData;
-    const stats = (r: Result) => ({ saldo: fmtSaldo(r.saldo), below: `${r.insufficient} / 4` });
+    const stats = (r: Result) => ({ title: "Matura-Rechner", path: MATURA_PATH, saldo: fmtSaldo(r.saldo), below: `${r.insufficient} / 4` });
     if (!scenario || result.status === "final") {
       data = { headline: "", big: "", sub: `Saldo ${fmtSaldo(result.saldo)} · ${result.insufficient} von 4 unter 4.0 · Schnitt ${result.mean.toFixed(2)}`, tone: result.passed ? "pass" : "fail", ...stats(result) };
     } else if (scenario.kind !== "min" || (scenario.floor && scenario.floor.slots === 0)) {
@@ -700,7 +685,8 @@ function ShareBar({ result, scenario, goal }: { result: Result; scenario: Scenar
       data = { headline: goal.kind === "mean" ? `Für einen Schnitt von ${goal.mean.toFixed(1)} brauche ich` : "Ich brauche noch", big: fmt(f.grade), sub: `in ${f.slots === 1 ? "der offenen Prüfung" : `jeder der ${f.slots} offenen Prüfungen`} — dann ist das Ziel erreicht.`, tone: "forecast", ...stats(result) };
     }
     await document.fonts?.load?.("800 220px Inter").catch(() => undefined);
-    const r = await shareImage(drawShareImage(data));
+    const r = await shareImage(drawShareImage(data), "Matura-Rechner", "matura-rechner.png");
+    if (r !== "failed") track("matura_share");
     setNote(r === "downloaded" ? "Bild gespeichert — schick es in den Klassenchat." : r === "failed" ? "Teilen abgebrochen." : null);
   };
 

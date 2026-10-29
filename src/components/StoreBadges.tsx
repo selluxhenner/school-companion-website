@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { track } from "@/lib/analytics";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/site";
 
 /**
@@ -6,10 +9,17 @@ import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/site";
  * proportions (App Store 120×40, Google Play 646×250 incl. built-in padding)
  * and are never recolored. Both render at a matching visual height.
  */
-export default function StoreBadges({ className = "" }: { className?: string }) {
+export default function StoreBadges({
+  className = "",
+  source,
+}: {
+  className?: string;
+  source?: "matura" | "promotion";
+}) {
+  const onClick = source ? () => track(`${source}_store_click`) : undefined;
   return (
     <div className={`flex flex-wrap items-center gap-x-4 gap-y-3 ${className}`}>
-      <a href={APP_STORE_URL} aria-label="School Companion im App Store laden">
+      <a href={APP_STORE_URL} aria-label="School Companion im App Store laden" onClick={onClick}>
         <Image
           src="/badges/app-store-badge.svg"
           alt="Laden im App Store"
@@ -18,7 +28,7 @@ export default function StoreBadges({ className = "" }: { className?: string }) 
           className="h-[54px] w-auto"
         />
       </a>
-      <a href={PLAY_STORE_URL} aria-label="School Companion bei Google Play laden">
+      <a href={PLAY_STORE_URL} aria-label="School Companion bei Google Play laden" onClick={onClick}>
         {/* Google's badge PNG ships with ~15% internal clear space, so it
             renders slightly taller to visually match the Apple badge. */}
         <Image
