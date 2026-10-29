@@ -6,7 +6,15 @@ import Faq from "@/components/Faq";
 import DownloadCta from "@/components/DownloadCta";
 import Footer from "@/components/Footer";
 import Logo from "@/components/Logo";
-import { APP_NAME, MATURA_DESCRIPTION, MATURA_FAQS, MATURA_PATH, MATURA_TITLE, SITE_URL } from "@/lib/site";
+import {
+  APP_NAME,
+  MATURA_DESCRIPTION,
+  MATURA_FAQS,
+  MATURA_PATH,
+  MATURA_TITLE,
+  PROMOTION_PATH,
+  SITE_URL,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: `${MATURA_TITLE} | ${APP_NAME}` },
@@ -85,6 +93,12 @@ export default function MaturaPage() {
             Bestehst du die Matura? Trag deine Noten ein und sieh sofort, wo du stehst und was du in den offenen
             Prüfungen noch brauchst. Nichts wird hochgeladen — alles bleibt auf deinem Gerät.
           </p>
+          <p className="mt-3 max-w-xl text-sm text-ink-2">
+            Geht es um die Promotion statt um die Matura?{" "}
+            <Link href={PROMOTION_PATH} className="font-semibold text-brand-dark underline-offset-2 hover:underline">
+              Zum Promotion-Rechner.
+            </Link>
+          </p>
         </div>
       </header>
 
@@ -94,6 +108,7 @@ export default function MaturaPage() {
         </div>
 
         <DownloadCta
+          source="matura"
           title="Verfolge das über zwei Jahre statt nur heute."
           text="In der App kommen die Erfahrungsnoten aus deinen Semestern, die Prognose aktualisiert sich nach jeder Prüfung, und du bekommst Bescheid, wenn das Ergebnis kippt. Kostenlos, kein Abo."
         />

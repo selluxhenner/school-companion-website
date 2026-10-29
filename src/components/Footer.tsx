@@ -16,6 +16,11 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/promotion/" className="hover:text-ink">
+                Promotion-Rechner
+              </Link>
+            </li>
+            <li>
               <Link href="/support/" className="hover:text-ink">
                 Hilfe
               </Link>

@@ -10,6 +10,7 @@ School Companion is a free school planner app for iOS and Android, built for stu
 - Prüfungen: Übersicht mit Countdown und Erinnerungen
 - Noten: Durchschnitte, Notenziele und integrierter Matura-Rechner
 - Matura-Rechner (Web, kostenlos, ohne Login): https://schoolcompanion.ch/matura/ — Bestehensnormen des Kantons St.Gallen (Saldo, höchstens vier Noten unter 4), Prognose, benötigte Noten für die offenen Prüfungen, Ziel (Bestehen oder Mindestschnitt) und drei Szenarien (Minimum, Realistisch, Sehr gut)
+- Promotion-Rechner (Web, kostenlos, ohne Login): https://schoolcompanion.ch/promotion/ — Promotionsreglement des Gymnasiums Kanton St.Gallen (Saldo: doppelte Abweichungen unter 4 gegen Abweichungen über 4), bisheriges und neues Reglement, Zeitpunkte, Folgen und welche Noten noch fehlen
 - Fokus: Pomodoro-Timer und smarte Lernsessions
 - Lerngruppen und Freundescode: in Arbeit, derzeit vorübergehend nicht verfügbar
 - Sync: Account hält alle Geräte aktuell, funktioniert auch offline
@@ -18,6 +19,7 @@ School Companion is a free school planner app for iOS and Android, built for stu
 
 - [Website](https://schoolcompanion.ch/)
 - [Matura-Rechner](https://schoolcompanion.ch/matura/)
+- [Promotion-Rechner](https://schoolcompanion.ch/promotion/)
 - [App Store (iOS)](https://apps.apple.com/ch/app/school-companion-production/id6760979206)
 - [Google Play (Android)](https://play.google.com/store/apps/details?id=app.school_companion)
 - [Hilfe & Support](https://schoolcompanion.ch/support/)

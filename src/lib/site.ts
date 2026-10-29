@@ -177,3 +177,49 @@ export const MATURA_FAQS = [
     a: "Nur in deinem Browser. Nichts wird an einen Server geschickt. Löschst du die Website-Daten oder tippst auf Zurücksetzen, sind sie weg.",
   },
 ] as const;
+
+/**
+ * /promotion/ — the public Promotion-Rechner. Rules: Promotionsreglement des Gymnasiums,
+ * Kanton St.Gallen (3.2.101), both the 1998 text and the 2026 "Gymnasium der Zukunft" one.
+ */
+export const PROMOTION_PATH = "/promotion/";
+
+export const PROMOTION_TITLE = "Promotion-Rechner – Werde ich promoviert?";
+
+export const PROMOTION_DESCRIPTION =
+  "Kostenloser Promotion-Rechner für das Gymnasium im Kanton St.Gallen: Semester- oder Jahresnoten eintragen und sofort sehen, ob du promoviert wirst, wie dein Saldo aussieht und welche Noten dir noch fehlen. Kein Login, nichts wird hochgeladen.";
+
+export const PROMOTION_FAQS = [
+  {
+    q: "Wann werde ich promoviert?",
+    a: "Wenn die doppelte Summe deiner Notenabweichungen unter 4 nicht grösser ist als die Summe der Abweichungen über 4 (Art. 2 Promotionsreglement des Gymnasiums). Anders gesagt: Der Saldo muss mindestens 0 sein. Eine 5 bringt +1, eine 3.5 bringt −1, eine 3 bringt −2.",
+  },
+  {
+    q: "Wie viele ungenügende Noten darf ich haben?",
+    a: "Eine feste Höchstzahl nennt das Promotionsreglement nicht. Entscheidend ist allein der Saldo: Gute Noten können ungenügende ausgleichen. Anders als bei der Matura gibt es keine Regel «höchstens vier Noten unter 4».",
+  },
+  {
+    q: "Wie wird gerundet?",
+    a: "Promotionsnoten sind ganze oder halbe Noten (Art. 14 Mittelschulverordnung). Ein Viertel wird aufgerundet: Ein Durchschnitt von 3.75 zählt als 4.0, ein Durchschnitt von 4.25 als 4.5. Du kannst deshalb deinen aktuellen Durchschnitt eintragen — der Rechner zeigt dir, zu welcher Note er gerundet wird.",
+  },
+  {
+    q: "Was heisst «provisorisch promoviert»?",
+    a: "Reicht der Saldo am Ende des ersten Schuljahrs nicht, wirst du zunächst provisorisch promoviert und danach noch einmal geprüft. Wer in der Probezeit knapp scheitert, kann auf Entscheid der Promotionskonferenz ebenfalls provisorisch ins 2. Semester promoviert werden, wenn der Saldo nicht tiefer als −1.0 liegt. Wer als provisorisch Promovierter erneut nicht genügt, wird nicht promoviert oder ausgeschlossen. Was genau passiert, zeigt dir der Rechner für den gewählten Zeitpunkt.",
+  },
+  {
+    q: "Welche Fächer zählen?",
+    a: "Die Promotionsfächer stehen im Anhang 1 des Reglements und ändern sich von Schuljahr zu Schuljahr. Im 1. Schuljahr zählen zum Beispiel Deutsch, Sprachen, Mathematik, Naturwissenschaften und das Schwerpunktfach; ab dem 2. Schuljahr kommen weitere Fächer dazu, im neuen Reglement auch Informatik und Sport. Der Rechner zeigt dir für jeden Zeitpunkt die passende Liste.",
+  },
+  {
+    q: "Welches Reglement gilt für mich?",
+    a: "Wer bis August 2025 ins Gymnasium eingetreten ist, wird nach dem bisherigen Promotionsreglement von 1998 beurteilt. Für Schülerinnen und Schüler, die ab dem 1. August 2026 in die 1. Klasse eintreten, gilt das neue Reglement vom 17. Juni 2026 (Gymnasium der Zukunft). Die Saldo-Regel ist in beiden dieselbe; Fächer und Zeitpunkte unterscheiden sich. Der Rechner kennt beide.",
+  },
+  {
+    q: "Gilt der Rechner für jede Kantonsschule?",
+    a: "Er setzt das Promotionsreglement des Gymnasiums des Kantons St.Gallen um (Anhang 1: Heerbrugg, Sargans, Wil; neues Reglement: Burggraben St.Gallen, Sargans, Wil, ab 2027 auch Heerbrugg und Wattwil). Nicht berücksichtigt sind der Ermessensspielraum der Promotionskonferenz, Absenzen, Sportklassen und die IB-Klassen. Angaben ohne Gewähr — es zählt der Entscheid deiner Schule.",
+  },
+  {
+    q: "Wo werden meine Noten gespeichert?",
+    a: "Nur in deinem Browser. Nichts wird an einen Server geschickt. Löschst du die Website-Daten oder tippst auf Zurücksetzen, sind sie weg.",
+  },
+] as const;

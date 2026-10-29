@@ -291,10 +291,23 @@ export default function PrivacyPage() {
           <Section title="12. Diese Website">
             <p>
               Diese Website ist eine rein statische Informationsseite. Sie verwendet keine
-              Cookies, keine Analyse-Tools und kein Tracking. Beim Aufruf fallen lediglich
-              die technisch üblichen Server-Logdaten an (z.&nbsp;B. IP-Adresse, Zeitpunkt des
-              Zugriffs), die vom Hosting-Anbieter zur Gewährleistung des Betriebs kurzzeitig
-              gespeichert werden.
+              Cookies und kein Tracking über mehrere Websites hinweg. Beim Aufruf fallen
+              lediglich die technisch üblichen Server-Logdaten an (z.&nbsp;B. IP-Adresse,
+              Zeitpunkt des Zugriffs), die vom Hosting-Anbieter zur Gewährleistung des
+              Betriebs kurzzeitig gespeichert werden.
+            </p>
+            <p>
+              Zur Verbesserung der Website zählen wir Seitenaufrufe und einige wenige
+              Ereignisse, etwa dass ein Rechner benutzt oder ein Ergebnis geteilt wurde. Dafür
+              setzen wir Umami ein, eine datenschutzfreundliche Analyse-Software, die auf
+              einem eigenen Server von Serviweb läuft. Sie arbeitet ohne Cookies und ohne
+              Profilbildung und erfasst nie die Noten, die du eingibst.
+            </p>
+            <p>
+              Der Matura-Rechner und der Promotion-Rechner speichern deine eingegebenen Noten
+              ausschliesslich in deinem Browser (localStorage). Es wird nichts an einen Server
+              übertragen. Wenn du die Website-Daten in deinem Browser löschst oder auf
+              «Zurücksetzen» tippst, sind die Noten weg.
             </p>
           </Section>
 

@@ -2,15 +2,21 @@
  * The 1080×1920 result image that goes into a Klassenchat. Deliberately carries no
  * per-subject grades — only the verdict, the Saldo, the count below 4 and the link.
  */
-import { SITE_URL, MATURA_PATH } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
 
 export interface ShareData {
+  title: string;      // "Matura-Rechner" | "Promotion-Rechner"
+  path: string;       // "/matura/" — shown as the link at the bottom
   headline: string;   // "Bestanden" | "Nicht bestanden" | "Ich brauche noch"
   big: string;        // "4.5" | "" — the number under the headline
   sub: string;        // "in jeder der 5 offenen Prüfungen" | "Saldo +2.5"
   tone: "pass" | "fail" | "forecast";
   saldo: string;      // "+2.5"
   below: string;      // "3 / 4"
+  /** Colours the "below 4.0" figure red. Default: more than four, the Matura's cap. */
+  belowBad?: boolean;
+  /** Replaces "Bestanden" / "Nicht bestanden" when there is no big number. */
+  verdict?: string;
 }
 
 const BRAND = "#4ECDC4", INK = "#2C3E50", INK2 = "#7F8C8D", INK3 = "#95A5A6";
@@ -30,7 +36,7 @@ export function drawShareImage(d: ShareData): HTMLCanvasElement {
   ctx.fillStyle = "#FFFFFF";
   ctx.font = font(700, 40);
   ctx.textBaseline = "middle";
-  ctx.fillText("Matura-Rechner", 80, 150);
+  ctx.fillText(d.title, 80, 150);
 
   // card
   const cx = 80, cy = 380, cw = W - 160, ch = 1000, r = 40;
@@ -55,7 +61,7 @@ export function drawShareImage(d: ShareData): HTMLCanvasElement {
     ctx.textBaseline = "middle";
   } else {
     ctx.fillStyle = d.tone === "pass" ? "#38A89D" : TONE.fail; ctx.font = font(800, 120); ctx.textBaseline = "alphabetic";
-    ctx.fillText(d.tone === "pass" ? "Bestanden" : "Nicht bestanden", cx + 56, cy + 380);
+    ctx.fillText(d.verdict ?? (d.tone === "pass" ? "Bestanden" : "Nicht bestanden"), cx + 56, cy + 380);
     ctx.textBaseline = "middle";
   }
   ctx.fillStyle = INK2; ctx.font = font(500, 34);
@@ -66,13 +72,13 @@ export function drawShareImage(d: ShareData): HTMLCanvasElement {
 
   // two stats
   stat(ctx, cx + 64, cy + 740, "Saldo", d.saldo, d.saldo.startsWith("−") || d.saldo.startsWith("-") ? TONE.fail : "#38A89D");
-  stat(ctx, cx + cw / 2 + 16, cy + 740, "Noten unter 4.0", d.below, parseInt(d.below, 10) > 4 ? TONE.fail : "#38A89D");
+  stat(ctx, cx + cw / 2 + 16, cy + 740, "Noten unter 4.0", d.below, (d.belowBad ?? parseInt(d.below, 10) > 4) ? TONE.fail : "#38A89D");
 
   // footer
   ctx.fillStyle = "#FFFFFF"; ctx.font = font(800, 56);
   ctx.fillText("Und du? Rechne deine aus.", 80, 1560);
   ctx.font = font(600, 38);
-  ctx.fillText(`${SITE_URL.replace(/^https?:\/\//, "")}${MATURA_PATH.replace(/\/$/, "")}`, 80, 1640);
+  ctx.fillText(`${SITE_URL.replace(/^https?:\/\//, "")}${d.path.replace(/\/$/, "")}`, 80, 1640);
   ctx.fillStyle = "rgba(255,255,255,0.85)"; ctx.font = font(500, 28);
   ctx.fillText("Kein Login · nichts wird hochgeladen · 30 Sekunden", 80, 1700);
 
@@ -108,14 +114,14 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 /** Web Share with the image where the platform allows it, otherwise a download. */
-export async function shareImage(canvas: HTMLCanvasElement): Promise<"shared" | "downloaded" | "failed"> {
+export async function shareImage(canvas: HTMLCanvasElement, title: string, fileName: string): Promise<"shared" | "downloaded" | "failed"> {
   const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
   if (!blob) return "failed";
-  const file = new File([blob], "matura-rechner.png", { type: "image/png" });
+  const file = new File([blob], fileName, { type: "image/png" });
   const nav = navigator as Navigator & { canShare?: (d: ShareData_) => boolean };
   if (nav.share && nav.canShare?.({ files: [file] })) {
     try {
-      await nav.share({ files: [file], title: "Matura-Rechner" });
+      await nav.share({ files: [file], title });
       return "shared";
     } catch {
       return "failed"; // user cancelled — nothing to download
@@ -123,7 +129,7 @@ export async function shareImage(canvas: HTMLCanvasElement): Promise<"shared" | 
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "matura-rechner.png";
+  a.href = url; a.download = fileName;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   return "downloaded";

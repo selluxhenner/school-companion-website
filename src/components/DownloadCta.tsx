@@ -4,9 +4,11 @@ import StoreBadges from "./StoreBadges";
 export default function DownloadCta({
   title = `Hol dir ${APP_NAME}`,
   text = "Kostenlos für iOS und Android – kein Abo, keine versteckten Kosten.",
+  source,
 }: {
   title?: string;
   text?: string;
+  source?: "matura" | "promotion";
 }) {
   return (
     <section aria-labelledby="download-heading" className="bg-brand">
@@ -15,7 +17,7 @@ export default function DownloadCta({
           {title}
         </h2>
         <p className="mt-3 max-w-2xl text-lg text-white/90">{text}</p>
-        <StoreBadges className="mt-8 justify-center" />
+        <StoreBadges className="mt-8 justify-center" source={source} />
       </div>
     </section>
   );
