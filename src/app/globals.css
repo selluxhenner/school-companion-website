@@ -49,6 +49,23 @@ html {
   scroll-behavior: smooth;
 }
 
+/* In-page jumps glide, except for people who asked their device for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/*
+ * The Matura calculator's answer strip sticks to the top on phones and tablets. Keep
+ * whatever the page scrolls to (the next grade field, the verdict) clear of it.
+ */
+@media (width < 64rem) {
+  html:has([data-answer-strip]) {
+    scroll-padding-top: 4.5rem;
+  }
+}
+
 body {
   @apply bg-white text-ink antialiased;
 }

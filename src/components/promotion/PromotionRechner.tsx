@@ -18,6 +18,7 @@ import { drawShareImage, shareImage, type ShareData } from "@/lib/matura/share";
 import { track } from "@/lib/analytics";
 import { MATURA_PATH, PROMOTION_PATH, SITE_URL } from "@/lib/site";
 import GradeInput from "@/components/rechner/GradeInput";
+import { TOUCH } from "@/components/rechner/touch";
 
 // ---------------------------------------------------------------------------
 // formatting
@@ -27,7 +28,7 @@ const fmt = (n: number | null) => (n === null ? "—" : n.toFixed(1));
 const fmtSaldo = (n: number | null) =>
   n === null ? "—" : n > 0 ? `+${n.toFixed(1)}` : n < 0 ? `−${Math.abs(n).toFixed(1)}` : "±0.0";
 
-const sel = "h-9 w-full rounded-thumb border border-line bg-surface px-2 text-sm text-ink";
+const sel = `h-9 w-full rounded-thumb border border-line bg-surface px-2 text-sm text-ink ${TOUCH}`;
 const lab = "flex flex-col gap-1 text-xs font-medium text-ink-2";
 
 // ---------------------------------------------------------------------------
@@ -83,7 +84,8 @@ export default function PromotionRechner({ rules }: { rules?: ReactNode }) {
   };
 
   return (
-    <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10">
+    // grid-cols-1 is minmax(0,1fr): an auto track would grow to its longest unbroken row.
+    <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10">
       {/* On a phone the verdict comes first; on a laptop it sits beside the grades and stays put. */}
       <aside className="order-first flex flex-col gap-7 lg:order-last lg:sticky lg:top-6">
         <VerdictCard result={result} moment={moment} provisional={provisional} />
@@ -105,7 +107,7 @@ export default function PromotionRechner({ rules }: { rules?: ReactNode }) {
                   role="radio"
                   aria-checked={ruleset === id}
                   onClick={() => setRuleset(id)}
-                  className={`min-h-9 rounded-thumb px-2 py-1.5 text-[13px] font-semibold leading-tight transition ${ruleset === id ? "bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : "text-ink-2 hover:text-ink"}`}
+                  className={`min-h-9 rounded-thumb px-2 py-1.5 text-[13px] font-semibold leading-tight transition pointer-coarse:min-h-11 ${ruleset === id ? "bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : "text-ink-2 hover:text-ink"}`}
                 >
                   {RULESETS[id].label}
                 </button>
@@ -164,7 +166,7 @@ export default function PromotionRechner({ rules }: { rules?: ReactNode }) {
             <h2 id="subjects-heading" className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">
               {subjects.length} Promotionsfächer
             </h2>
-            <button type="button" onClick={reset} className="text-[13px] font-medium text-ink-2 hover:text-ink">
+            <button type="button" onClick={reset} className="-m-3 p-3 text-[13px] font-medium text-ink-2 hover:text-ink">
               Zurücksetzen
             </button>
           </div>
