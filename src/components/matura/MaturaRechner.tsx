@@ -31,6 +31,11 @@ import { MATURA_PATH, SITE_URL } from "@/lib/site";
 import { track } from "@/lib/analytics";
 import Chevron from "@/components/rechner/Chevron";
 import GradeInput from "@/components/rechner/GradeInput";
+import { TOUCH, focusFirstEmptyGrade } from "@/components/rechner/touch";
+
+// The look is the app's, not this page's own choice:
+// slop-ok: eyebrow - the app's section label (constants/theme.ts "overline": 11px, uppercase, 0.4 tracking)
+// slop-ok: dots - " · " is the app's separator between two facts on one line
 
 // ---------------------------------------------------------------------------
 // formatting
@@ -60,6 +65,10 @@ const SUBJECT_COLOR: Record<string, string> = {
 };
 
 const partLabel = (slot: Slot) => (slot.part === "written" ? "schriftlich" : slot.early ? "mündlich · Vormatura" : "mündlich");
+/** One word for a narrow row. The Vormatura is oral by definition (Art. 7 Abs. 3). */
+const partShort = (slot: Slot) => (slot.part === "written" ? "schriftlich" : slot.early ? "Vormatura" : "mündlich");
+/** The averages a student can aim for: 4.0 to 6.0 in tenths. */
+const MEAN_GOALS = Array.from({ length: 21 }, (_, i) => (4 + i / 10).toFixed(1));
 const goalLabel = (goal: Goal) => (goal.kind === "pass" ? "Bestehen" : `Schnitt ≥ ${goal.mean.toFixed(1)}`);
 
 // ---------------------------------------------------------------------------
@@ -133,22 +142,25 @@ export default function MaturaRechner({ rules }: { rules?: ReactNode }) {
   const forecasting = result.status === "forecast" && slots.length > 0;
 
   return (
-    <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-10">
-      {/* On a phone the verdict comes first; on a laptop it sits beside the grades and stays put. */}
-      <aside className="order-first flex flex-col gap-7 lg:order-last lg:sticky lg:top-6">
-        <VerdictCard result={result} scenarios={scenarios} kind={kind} onKind={setKind} goal={goal} onGoal={setGoal} forecasting={forecasting} />
-        {forecasting && <Comparison scenarios={scenarios} kind={kind} onKind={setKind} goal={goal} />}
-        {forecasting && <PlanList slots={slots} estimates={estimates} onEstimate={setEstimate} scenario={selected} goal={goal} grades={grades} />}
-        <ShareBar result={result} scenario={forecasting ? selected : null} goal={goal} />
-      </aside>
+    <div className="flex flex-col gap-4 lg:block">
+      <AnswerStrip result={result} scenario={forecasting ? selected : null} />
 
-      <div className="flex flex-col gap-7">
+      {/*
+        On a phone, top to bottom: the grades, then the verdict and everything that follows
+        from it. Nothing above the field being typed into changes height, so the page never
+        jumps under the thumb. On a laptop the verdict sits beside the grades and stays put.
+
+        grid-cols-1 is minmax(0,1fr): without it the single phone column is an auto track and
+        grows to its longest unbroken row, wider than the screen. The second row is 1fr so a
+        side column taller than the grades stretches the space below the rules, not above.
+      */}
+      <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10">
         <section aria-labelledby="subjects-heading" className="flex flex-col gap-3">
           <div className="flex items-center justify-between px-1">
             <h2 id="subjects-heading" className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">
               13 Maturanoten
             </h2>
-            <button type="button" onClick={reset} className="text-[13px] font-medium text-ink-2 hover:text-ink">
+            <button type="button" onClick={reset} className="-m-3 p-3 text-[13px] font-medium text-ink-2 hover:text-ink">
               Zurücksetzen
             </button>
           </div>
@@ -164,14 +176,91 @@ export default function MaturaRechner({ rules }: { rules?: ReactNode }) {
             Erfahrungsnote weiter — das ist die Prognose, markiert mit *.
           </p>
         </section>
-        {rules}
+
+        <aside className="flex flex-col gap-7 lg:sticky lg:top-6 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <VerdictCard result={result} scenarios={scenarios} kind={kind} onKind={setKind} goal={goal} onGoal={setGoal} forecasting={forecasting} />
+          {forecasting && <Comparison scenarios={scenarios} kind={kind} onKind={setKind} goal={goal} />}
+          {forecasting && <PlanList slots={slots} estimates={estimates} onEstimate={setEstimate} scenario={selected} goal={goal} grades={grades} />}
+          <ShareBar result={result} scenario={forecasting ? selected : null} goal={goal} />
+        </aside>
+
+        {rules && <div className="lg:col-start-1">{rules}</div>}
       </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// verdict card — the one shadowed surface on the page
+// answer strip — phones only: the verdict in one line, in view while the grades scroll
+// ---------------------------------------------------------------------------
+
+/** The id the strip jumps to; VerdictCard carries it. */
+const VERDICT_ID = "ergebnis";
+
+function AnswerStrip({ result, scenario }: { result: Result; scenario: Scenario | null }) {
+  const { status } = result;
+  const total = result.rows.length;
+  const entering = status === "empty" || status === "incomplete";
+
+  let dot = "bg-line-2";
+  let tone = "text-ink";
+  let main = "Trag deine Noten ein";
+  let side = `0 / ${total}`;
+
+  if (status === "incomplete") {
+    main = `Noch ${result.missing} ${result.missing === 1 ? "Fach" : "Fächer"} ohne Note`;
+    side = `${total - result.missing} / ${total}`;
+  } else if (status === "final") {
+    dot = result.passed ? "bg-success" : "bg-accent";
+    tone = result.passed ? "text-brand-dark" : "text-accent";
+    main = result.passed ? "Bestanden" : "Nicht bestanden";
+    side = `Saldo ${fmtSaldo(result.saldo)}`;
+  } else if (status === "forecast") {
+    dot = "bg-warning";
+    main = "Prognose";
+    side = `Saldo ${fmtSaldo(result.saldo)}`;
+    const floor = scenario?.floor;
+    if (scenario?.kind === "min" && floor && floor.slots > 0) {
+      // Same answer as the verdict card's big number.
+      if (floor.grade === null) {
+        tone = "text-accent";
+        main = "Ziel nicht erreichbar";
+        side = "";
+      } else {
+        main = `Du brauchst noch ${fmt(floor.grade)}`;
+        side = floor.slots === 1 ? "in 1 Prüfung" : `in ${floor.slots} Prüfungen`;
+      }
+    } else if (scenario?.result) {
+      const r = scenario.result;
+      tone = r.passed ? "text-brand-dark" : "text-accent";
+      main = `${scenario.kind === "best" ? "Sehr gut" : "Realistisch"}: ${r.passed ? "bestanden" : "nicht bestanden"}`;
+      side = `Ø ${r.mean.toFixed(2)}`;
+    }
+  }
+
+  // While grades are missing the tap goes to the next empty one; after that, to the verdict.
+  const go = () => {
+    if (entering && focusFirstEmptyGrade("en")) return;
+    document.getElementById(VERDICT_ID)?.scrollIntoView({ block: "start" });
+  };
+
+  return (
+    <button
+      type="button"
+      data-answer-strip=""
+      onClick={go}
+      aria-label={`${entering ? "Zum nächsten Fach ohne Note" : "Zum Ergebnis"}: ${main}${side ? `, ${side}` : ""}`}
+      className="sticky top-2 z-20 flex min-h-12 w-full items-center gap-2.5 rounded-control border border-line bg-surface px-4 py-2 text-left shadow-[0_4px_8px_rgba(0,0,0,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 lg:hidden"
+    >
+      <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
+      <span className={`tnum min-w-0 flex-1 text-[15px] font-semibold leading-snug ${tone}`}>{main}</span>
+      {side && <span className="tnum shrink-0 text-[13px] font-medium text-ink-2">{side}</span>}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// verdict card — the one shadowed surface in the page's flow (the strip floats above it)
 // ---------------------------------------------------------------------------
 
 function VerdictCard({ result, scenarios, kind, onKind, goal, onGoal, forecasting }: {
@@ -199,7 +288,7 @@ function VerdictCard({ result, scenarios, kind, onKind, goal, onGoal, forecastin
           : "Trag deine Noten ein";
 
   return (
-    <section aria-live="polite" className="flex flex-col gap-[18px] rounded-card bg-surface p-5 shadow-[0_4px_8px_rgba(0,0,0,0.08)] sm:p-6">
+    <section id={VERDICT_ID} aria-live="polite" className="flex flex-col gap-[18px] rounded-card bg-surface p-5 shadow-[0_4px_8px_rgba(0,0,0,0.08)] sm:p-6">
       <div className="flex items-center gap-2">
         <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden="true" />
         <span className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">{label}</span>
@@ -216,7 +305,7 @@ function VerdictCard({ result, scenarios, kind, onKind, goal, onGoal, forecastin
               role="tab"
               aria-selected={kind === s.kind}
               onClick={() => onKind(s.kind)}
-              className={`h-8 rounded-thumb text-[13px] font-semibold transition ${kind === s.kind ? "bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : "text-ink-2 hover:text-ink"}`}
+              className={`h-8 rounded-thumb text-[13px] font-semibold transition pointer-coarse:h-11 pointer-coarse:text-sm ${kind === s.kind ? "bg-surface text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08)]" : "text-ink-2 hover:text-ink"}`}
             >
               {s.label}
             </button>
@@ -265,7 +354,7 @@ function VerdictCard({ result, scenarios, kind, onKind, goal, onGoal, forecastin
 }
 
 function GoalControl({ goal, onGoal }: { goal: Goal; onGoal: (g: Goal) => void }) {
-  const sel = "h-8 rounded-thumb border border-line bg-surface px-2 text-[13px] font-medium text-ink";
+  const sel = `h-8 rounded-thumb border border-line bg-surface px-2 text-[13px] font-medium text-ink ${TOUCH}`;
   return (
     <div className="flex flex-wrap items-center gap-2">
       <label className="text-xs font-medium text-ink-2" htmlFor="goal-kind">Ziel</label>
@@ -279,20 +368,16 @@ function GoalControl({ goal, onGoal }: { goal: Goal; onGoal: (g: Goal) => void }
         <option value="mean">Schnitt mindestens</option>
       </select>
       {goal.kind === "mean" && (
-        <input
-          type="number"
-          inputMode="decimal"
-          min={4}
-          max={6}
-          step={0.1}
+        // A list, not a number field: the field snapped to 4 as soon as it was emptied and
+        // read "5,5" as 6. A list also needs no keyboard on a phone.
+        <select
           aria-label="Zielschnitt"
-          value={goal.mean}
-          onChange={(e) => {
-            const v = Number(e.target.value);
-            if (Number.isFinite(v)) onGoal({ kind: "mean", mean: Math.min(6, Math.max(4, Math.round(v * 10) / 10)) });
-          }}
-          className={`tnum w-[68px] text-center ${sel}`}
-        />
+          className={`tnum ${sel}`}
+          value={goal.mean.toFixed(1)}
+          onChange={(e) => onGoal({ kind: "mean", mean: Number(e.target.value) })}
+        >
+          {MEAN_GOALS.map((m) => <option key={m}>{m}</option>)}
+        </select>
       )}
     </div>
   );
@@ -440,7 +525,8 @@ function Comparison({ scenarios, kind, onKind, goal }: { scenarios: Record<Scena
                   {sc.reached ? "Ziel ✓" : r.passed ? "Ziel ✗" : "Nicht best."}
                 </span>
                 <span className="tnum text-xs text-ink-2">Schnitt {r.mean.toFixed(2)}</span>
-                <span className="tnum text-xs text-ink-2">Saldo {fmtSaldo(r.saldo)} · {r.insufficient} u. 4</span>
+                <span className="tnum text-xs text-ink-2">Saldo {fmtSaldo(r.saldo)}</span>
+                <span className="tnum text-xs text-ink-2">{r.insufficient} unter 4</span>
               </>
             ) : (
               <span className="text-[15px] font-semibold text-accent">—</span>
@@ -483,11 +569,13 @@ function PlanList({ slots, estimates, onEstimate, scenario, goal, grades }: {
           </span>
         )}
       </div>
-      <div className="overflow-hidden rounded-card border border-line bg-surface">
+      {/* A container: the rows lay out by the width of this list, which is narrow on a phone
+          and in the laptop's side column, and wide on a tablet. */}
+      <div className="@container overflow-hidden rounded-card border border-line bg-surface">
         <div className="flex items-center gap-2.5 border-b border-line bg-surface-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">
           <span className="flex-1">Prüfung</span>
-          <span className="w-14 text-center">Realist.</span>
-          <span className="w-14 text-center">Sehr gut</span>
+          <span className="w-14 whitespace-nowrap text-center">Realist.</span>
+          <span className="w-14 whitespace-nowrap text-center">Sehr gut</span>
           <span className="w-11 text-right">{col.short}</span>
         </div>
         {slots.map((slot) => {
@@ -498,17 +586,26 @@ function PlanList({ slots, estimates, onEstimate, scenario, goal, grades }: {
           const effort = scenario.kind === "min" && g?.source === "plan" && g.grade !== null && en !== null ? EFFORT[effortOf(g.grade - en)] : null;
           const gradeCls = g?.source === "plan" ? "text-ink" : g?.source === "estimate" ? "text-ink-3" : "text-ink-2";
           return (
-            <div key={key} className="flex items-center gap-2.5 border-t border-line px-4 py-2.5 first:border-t-0">
-              <span className="h-7 w-1 shrink-0 rounded-sm" style={{ background: SUBJECT_COLOR[slot.subject.id] }} aria-hidden="true" />
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-[15px] font-semibold">{slot.subject.name}</span>
-                <span className="truncate text-xs text-ink-2">
+            // The colour bar is positioned, not a flex item, so that on the narrowest phones
+            // (list under 312px, a 320px screen) the name can take a line of its own and the
+            // fields wrap below it, still right-aligned under their column heads.
+            <div key={key} className="relative flex flex-wrap items-center justify-end gap-x-2.5 gap-y-2 border-t border-line py-2.5 pl-[30px] pr-4 first:border-t-0">
+              <span className="absolute bottom-2.5 left-4 top-2.5 w-1 rounded-sm" style={{ background: SUBJECT_COLOR[slot.subject.id] }} aria-hidden="true" />
+              <div className="flex min-w-0 flex-1 flex-col @max-[19.5rem]:basis-full">
+                <span className="hyphens-auto text-[15px] font-semibold leading-snug [overflow-wrap:anywhere] @lg:truncate">{slot.subject.name}</span>
+                {/* Narrow: two short lines, nothing cut off. The effort tag stays in the verdict card. */}
+                <span className="flex flex-col text-xs leading-snug text-ink-2 @lg:hidden">
+                  <span>{partShort(slot)}</span>
+                  <span>bisher <span className="tnum">{fmt(en)}</span></span>
+                </span>
+                {/* Wide: one line, with the effort tag per exam. */}
+                <span className="hidden truncate text-xs text-ink-2 @lg:block">
                   {partLabel(slot)} · bisher <span className="tnum">{fmt(en)}</span>
                   {effort && <span className={`ml-1.5 rounded-tag px-1.5 py-px text-[11px] font-medium ${effort.cls}`}>{effort.label}</span>}
                 </span>
               </div>
-              <GradeInput value={est.realistic} parsed={parseGrade(est.realistic)} step={slot.step} label={`${slot.subject.name} ${partLabel(slot)} — realistisch`} onChange={(v) => onEstimate(key, "realistic", v)} placeholder="—" />
-              <GradeInput value={est.best} parsed={parseGrade(est.best)} step={slot.step} label={`${slot.subject.name} ${partLabel(slot)} — sehr gut`} onChange={(v) => onEstimate(key, "best", v)} placeholder="—" />
+              <GradeInput kind="realistic" value={est.realistic} parsed={parseGrade(est.realistic)} step={slot.step} label={`${slot.subject.name} ${partLabel(slot)} — realistisch`} onChange={(v) => onEstimate(key, "realistic", v)} placeholder="—" />
+              <GradeInput kind="best" value={est.best} parsed={parseGrade(est.best)} step={slot.step} label={`${slot.subject.name} ${partLabel(slot)} — sehr gut`} onChange={(v) => onEstimate(key, "best", v)} placeholder="—" />
               <span className={`tnum w-11 text-right text-lg font-semibold ${g?.grade === null ? "text-accent" : gradeCls}`} title={g?.source === "estimate" ? "deine Schätzung" : g?.source === "default" ? "Standard" : undefined}>
                 {g ? fmt(g.grade) : "—"}
               </span>
@@ -540,7 +637,7 @@ function PlanList({ slots, estimates, onEstimate, scenario, goal, grades }: {
 function ChoicesPanel({ choices, onChange }: { choices: Choices; onChange: (c: Choices) => void }) {
   const blocked = blockedSciences(choices.spf);
   const set = <K extends keyof Choices>(k: K, v: Choices[K]) => onChange({ ...choices, [k]: v });
-  const sel = "h-9 w-full rounded-thumb border border-line bg-surface px-2 text-sm text-ink";
+  const sel = `h-9 w-full rounded-thumb border border-line bg-surface px-2 text-sm text-ink ${TOUCH}`;
   const lab = "flex flex-col gap-1 text-xs font-medium text-ink-2";
   const science = blocked.includes(choices.scienceOral) ? (["bio", "ch", "ph"] as const).find((s) => !blocked.includes(s)) : choices.scienceOral;
 
@@ -617,12 +714,13 @@ function SubjectRow({ row, entry, onChange }: { row: Row; entry: GradeEntry | un
 
   return (
     <div className="flex flex-col gap-2.5 border-t border-line px-4 py-3 first:border-t-0 sm:flex-row sm:items-center sm:gap-4">
-      <div className="flex flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
         <span className="h-7 w-1 shrink-0 rounded-sm" style={{ background: SUBJECT_COLOR[def.id] }} aria-hidden="true" />
-        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{def.name}</span>
+        {/* A long name ("SPF Physik und Anwendungen der Mathematik") wraps instead of being cut off. */}
+        <span className="min-w-0 flex-1 hyphens-auto text-[15px] font-semibold leading-snug [overflow-wrap:anywhere]">{def.name}</span>
         {!hasOral && (
           <Cell label={enLabel} inline>
-            <GradeInput value={e.en} parsed={row.en} step={0.5} label={`${def.name} — ${enLabel}`} onChange={(v) => onChange("en", v)} />
+            <GradeInput kind="en" value={e.en} parsed={row.en} step={0.5} label={`${def.name} — ${enLabel}`} onChange={(v) => onChange("en", v)} />
           </Cell>
         )}
         <span className="tnum w-9 text-right text-[15px] font-semibold sm:order-last">
@@ -634,16 +732,16 @@ function SubjectRow({ row, entry, onChange }: { row: Row; entry: GradeEntry | un
       {/* Exam subjects: the cells always sit on their own line. Others: inline on a phone, right-aligned on wider screens. */}
       <div className={`gap-2.5 pl-4 sm:pl-0 ${hasOral ? "flex" : "hidden sm:flex"}`}>
         <Cell label={enLabel}>
-          <GradeInput value={e.en} parsed={row.en} step={0.5} label={`${def.name} — ${enLabel}`} onChange={(v) => onChange("en", v)} />
+          <GradeInput kind="en" value={e.en} parsed={row.en} step={0.5} label={`${def.name} — ${enLabel}`} onChange={(v) => onChange("en", v)} />
         </Cell>
         {hasWritten && (
             <Cell label="schriftlich">
-              <GradeInput value={e.written} parsed={row.written} step={0.1} label={`${def.name} — schriftlich`} onChange={(v) => onChange("written", v)} />
+              <GradeInput kind="written" value={e.written} parsed={row.written} step={0.1} label={`${def.name} — schriftlich`} onChange={(v) => onChange("written", v)} />
             </Cell>
           )}
         {hasOral && (
           <Cell label={def.exam === "oralEarly" ? "Vormatura" : "mündlich"}>
-            <GradeInput value={e.oral} parsed={row.oral} step={0.5} label={`${def.name} — mündlich`} onChange={(v) => onChange("oral", v)} />
+            <GradeInput kind="oral" value={e.oral} parsed={row.oral} step={0.5} label={`${def.name} — mündlich`} onChange={(v) => onChange("oral", v)} />
           </Cell>
         )}
       </div>
@@ -652,11 +750,12 @@ function SubjectRow({ row, entry, onChange }: { row: Row; entry: GradeEntry | un
 }
 
 function Cell({ label, children, inline = false }: { label: string; children: ReactNode; inline?: boolean }) {
+  // A <label>, so a tap on the caption lands in the field above it.
   return (
-    <div className={`flex flex-col items-center gap-1 ${inline ? "sm:hidden" : ""}`}>
+    <label className={`flex flex-col items-center gap-1 ${inline ? "sm:hidden" : ""}`}>
       {children}
       <span className="text-[11px] font-medium text-ink-3">{label}</span>
-    </div>
+    </label>
   );
 }
 

@@ -55,13 +55,22 @@ export function drawShareImage(d: ShareData): HTMLCanvasElement {
   // headline + big number
   ctx.fillStyle = INK2; ctx.font = font(500, 34);
   ctx.fillText(d.headline, cx + 64, cy + 200);
+  // The widest line the card can hold. At 120px "Nicht bestanden" measures 981px and
+  // "Nicht promoviert" 1006px, so both ran out of the card and off the image.
+  const maxW = cw - 120;
+  const fit = (text: string, px: number) => {
+    ctx.font = font(800, px);
+    const w = ctx.measureText(text).width;
+    if (w > maxW) ctx.font = font(800, Math.floor((px * maxW) / w));
+  };
   if (d.big) {
-    ctx.fillStyle = INK; ctx.font = font(800, 220); ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = INK; fit(d.big, 220); ctx.textBaseline = "alphabetic";
     ctx.fillText(d.big, cx + 56, cy + 440);
     ctx.textBaseline = "middle";
   } else {
-    ctx.fillStyle = d.tone === "pass" ? "#38A89D" : TONE.fail; ctx.font = font(800, 120); ctx.textBaseline = "alphabetic";
-    ctx.fillText(d.verdict ?? (d.tone === "pass" ? "Bestanden" : "Nicht bestanden"), cx + 56, cy + 380);
+    const verdict = d.verdict ?? (d.tone === "pass" ? "Bestanden" : "Nicht bestanden");
+    ctx.fillStyle = d.tone === "pass" ? "#38A89D" : TONE.fail; fit(verdict, 120); ctx.textBaseline = "alphabetic";
+    ctx.fillText(verdict, cx + 56, cy + 380);
     ctx.textBaseline = "middle";
   }
   ctx.fillStyle = INK2; ctx.font = font(500, 34);
@@ -123,8 +132,11 @@ export async function shareImage(canvas: HTMLCanvasElement, title: string, fileN
     try {
       await nav.share({ files: [file], title });
       return "shared";
-    } catch {
-      return "failed"; // user cancelled — nothing to download
+    } catch (err) {
+      // AbortError: the student closed the share sheet, so there is nothing to download.
+      // Anything else (Safari refusing because the tap is too long ago, a blocked file
+      // type) means the sheet never opened: save the image instead of losing it.
+      if ((err as { name?: string } | null)?.name === "AbortError") return "failed";
     }
   }
   const url = URL.createObjectURL(blob);

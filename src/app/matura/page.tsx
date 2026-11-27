@@ -80,16 +80,17 @@ export default function MaturaPage() {
           <Link href="/" aria-label={`${APP_NAME} – Startseite`}>
             <Logo />
           </Link>
-          <Link href="/#download-heading" className="text-sm font-semibold text-brand-dark hover:underline">
+          <Link href="/#download-heading" className="-m-3 p-3 text-sm font-semibold text-brand-dark hover:underline">
             Zur App
           </Link>
         </div>
-        <div className="mx-auto max-w-6xl px-5 pb-8 pt-8 sm:px-6 sm:pb-12 sm:pt-14">
+        {/* Kept short on a phone, so the first grade fields are on the first screen. */}
+        <div className="mx-auto max-w-6xl px-5 pb-5 pt-6 sm:px-6 sm:pb-12 sm:pt-14">
           <p className="text-[11px] font-semibold uppercase tracking-[0.4px] text-ink-3">
             Kantonsschule Wil · Kanton St.Gallen · Bestehensnormen
           </p>
-          <h1 className="mt-3 text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">Matura-Rechner</h1>
-          <p className="mt-4 max-w-xl text-lg leading-relaxed text-ink-2">
+          <h1 className="mt-2 text-4xl font-extrabold leading-tight tracking-tight sm:mt-3 sm:text-6xl">Matura-Rechner</h1>
+          <p className="mt-3 max-w-xl text-base leading-relaxed text-ink-2 sm:mt-4 sm:text-lg">
             Bestehst du die Matura? Trag deine Noten ein und sieh sofort, wo du stehst und was du in den offenen
             Prüfungen noch brauchst. Nichts wird hochgeladen — alles bleibt auf deinem Gerät.
           </p>
@@ -103,7 +104,7 @@ export default function MaturaPage() {
       </header>
 
       <main className="bg-ground">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+        <div className="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 sm:py-10">
           <MaturaRechner rules={<MaturaRules />} />
         </div>
 

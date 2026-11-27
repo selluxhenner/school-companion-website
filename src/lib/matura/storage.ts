@@ -38,9 +38,10 @@ export function load(): Saved | null {
       for (const [k, v] of Object.entries(parsed.wishes)) estimates[k] = { realistic: String(v ?? ""), best: "" };
     }
 
+    // The goal list offers 4.0 to 6.0 in tenths; bring anything stored outside that onto it.
     const goal: Goal =
-      parsed.goal?.kind === "mean" && typeof parsed.goal.mean === "number" && parsed.goal.mean >= 1 && parsed.goal.mean <= 6
-        ? { kind: "mean", mean: parsed.goal.mean }
+      parsed.goal?.kind === "mean" && typeof parsed.goal.mean === "number" && Number.isFinite(parsed.goal.mean)
+        ? { kind: "mean", mean: Math.min(6, Math.max(4, Math.round(parsed.goal.mean * 10) / 10)) }
         : PASS;
 
     return {
